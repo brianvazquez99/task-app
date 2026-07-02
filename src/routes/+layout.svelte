@@ -1,9 +1,23 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import {tasks, type TASK} from '$lib/state.svelte'
+	import { collection, getDocs } from 'firebase/firestore';
+	import { onMount } from 'svelte';
+	import { db } from '$lib/firebase/firebase.app';
 
 	let { children } = $props();
 	let today = new Date().toDateString()
+    let loading = $state(true)
+
+    onMount(async () => {
+
+        const snapshot =  await getDocs(collection(db!, 'Tasks'))
+        const loadedTasks = snapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+        tasks.data = loadedTasks
+        loading = false
+
+    })
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
