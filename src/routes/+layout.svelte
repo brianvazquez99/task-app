@@ -2,7 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import {taskItems, tasks, type TASK, type TASK_ITEM} from '$lib/state.svelte'
-	import { collection, getDocs } from 'firebase/firestore';
+	import { addDoc, collection, getDocs } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import { db } from '$lib/firebase/firebase.app';
 
@@ -12,6 +12,8 @@
 	let today = new Date().toDateString()
     let loading = $state(true)
 	let showList = $state<boolean>(true)
+	let newListModal:HTMLDialogElement
+	let newTaskTitle = $state('')
 
     onMount(async () => {
 
@@ -27,10 +29,63 @@
         loading = false
 
     })
+
+	async function addTask(e:Event) {
+		e.preventDefault()
+		tasks.data.push({id: '', Name: newTaskTitle})
+		newListModal.close()
+		try {
+			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle})
+			const tasksSnapshot = await getDocs(collection(db!, 'Tasks'))
+			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+			tasks.data = loadedTasks
+			newTaskTitle = ''
+
+		} catch (error) {
+			console.error(error);
+		}
+
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<div class="bg-gray-100 h-dvh w-full">
+<dialog bind:this={newListModal} class="rounded-lg m-auto shadow-2xl backdrop:bg-black/50">
+	<div class="w-96 p-6">
+		<h2 class="text-xl font-semibold text-slate-800 mb-4">Create New List</h2>
+		<form onsubmit={addTask} method="post" class="flex flex-col gap-4">
+			<div class="flex flex-col gap-2">
+				<label for="listName" class="text-sm font-medium text-slate-700">List Name</label>
+				<input required
+					type="text"
+					id="listName"
+					bind:value={newTaskTitle}
+					placeholder="Enter list name..."
+					class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					autofocus
+				/>
+			</div>
+			<div class="flex gap-3 justify-end mt-4">
+				<button
+					type="button"
+					onclick={() => {
+						newTaskTitle = '';
+						newListModal.close();
+					}}
+					class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+				>
+					Cancel
+				</button>
+				<button
+					type="submit"
+					class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 transition-colors"
+				>
+					Done
+				</button>
+			</div>
+		</form>
+	</div>
+</dialog>
+<div class="bg-gray-100 min-h-dvh w-full flex flex-col">
 	<div class="w-full flex justify-center p-2">
 		<span class="text-xl font-semibold text-slate-400">{today}</span>
 	</div>
@@ -67,6 +122,12 @@
 				{/each}
 
 				{/if}
+				<button onclick={() => newListModal.showModal()} type="button" class="flex items-center gap-2 mt-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-200 transition-colors hover:cursor-pointer">
+					<svg width="25px" height="25px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+					</svg>
+					<span class="text-sm">Create New List</span>
+				</button>
 			</div>
 		</div>
 		<div class="flex-1 h-full justify-center w-full flex">
