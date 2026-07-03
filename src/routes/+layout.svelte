@@ -6,9 +6,12 @@
 	import { onMount } from 'svelte';
 	import { db } from '$lib/firebase/firebase.app';
 
+
+
 	let { children } = $props();
 	let today = new Date().toDateString()
     let loading = $state(true)
+	let showList = $state<boolean>(true)
 
     onMount(async () => {
 
@@ -46,12 +49,24 @@
 					<span class="text-sm font-semibold text-slate-500">
 						Lists
 					</span>
-					<div class="rounded-full w-8 h-8 transition-colors hover:cursor-pointer hover:bg-gray-200 flex items-center justify-center">
+					<button type="button" onclick={() => showList = !showList} class="rounded-full w-8 h-8 transition-colors hover:cursor-pointer hover:bg-gray-200 flex items-center justify-center">
 
-						<svg width="25px" height="25px" viewBox="0 0 24 24" class="text-slate-400" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7 10L12 15L17 10" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-					</div>
+						<svg class:rotate-180={showList} width="25px" height="25px" viewBox="0 0 24 24" class="text-slate-400" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7 10L12 15L17 10" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+					</button>
 
 				</div>
+				{#if showList}
+				{#each tasks.data as task (task.id) }
+				<div class="flex gap-3 items-center">
+					<input type="checkbox" name="task-{task.id}" id="task-{task.id}" class="form-checkbox checked:bg-gray-500">
+					<label class="text-sm" for="task-{task.id}">{task.Name}</label>
+					<div class="text-end flex-1 me-3 text-gray-600 text-sm">
+						{taskItems.data.filter(item => item.task_id === task.id).length}
+					</div>
+				</div>
+				{/each}
+
+				{/if}
 			</div>
 		</div>
 		<div class="flex-1 h-full justify-center w-full flex">
