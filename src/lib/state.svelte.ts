@@ -9,6 +9,7 @@ export type TASK_ITEM = {
     title:string
     description:string
     date:string
+    order:number |null
 }
 
 export const  tasks = $state<{data:TASK[]}>({

@@ -2,7 +2,6 @@
 	import { db } from "$lib/firebase/firebase.app";
 	import { taskItems, tasks, type TASK_ITEM } from "$lib/state.svelte";
 	import { addDoc, collection } from "firebase/firestore";
-	import { preventDefault } from "svelte/legacy";
 
 console.log(tasks)
 
@@ -12,12 +11,17 @@ let newTask = $state<TASK_ITEM>({
     task_id:'',
     title:'',
     description:'',
-    date:''
+    date:'',
+    order: null
 })
+
+
 
 
 function openAddNewTaskItemModal(taskId:string) {
     newTask.task_id = taskId
+    const filtered = taskItems.data.filter((item) => item.task_id === newTask.task_id)
+    newTask.order = filtered.length
     addTaskModal.showModal()
 
 }
@@ -29,13 +33,14 @@ async function addNewTask() {
         addTaskModal.close()
         taskItems.data.push({...newTask});
         try {
-            await addDoc(collection(db, "Task Items"), {task_id:newTask.task_id, title:newTask.title, description:newTask.description, date:newTask.date});
+            await addDoc(collection(db, "Task Items"), {task_id:newTask.task_id, title:newTask.title, description:newTask.description, date:newTask.date, order:newTask.order});
             newTask = {
                 id:'',
                 task_id:'',
                 title:'',
                 description:'',
-                date:''
+                date:'',
+                order: null
             }
 
         } catch (error) {
@@ -63,10 +68,7 @@ async function addNewTask() {
         </div>
         <div class="flex flex-col">
             <label class="font-semibold" for="date"> Date</label>
-            <div class="flex items-center gap-5 p-2">
-                <span class="rounded-full bg-neutral-200 font-semibold px-3 py-1">Today</span>
-                <span class="rounded-full bg-neutral-200 font-semibold px-3 py-1">Tomorrow</span>
-            </div>
+
             <input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="flex justify-end mt-3">

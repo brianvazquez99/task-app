@@ -2,7 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import {taskItems, tasks, type TASK, type TASK_ITEM} from '$lib/state.svelte'
-	import { addDoc, collection, getDocs } from 'firebase/firestore';
+	import { addDoc, collection, getDocs, orderBy, query, serverTimestamp,  } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import { db } from '$lib/firebase/firebase.app';
 
@@ -14,12 +14,15 @@
 	let showList = $state<boolean>(true)
 	let newListModal:HTMLDialogElement
 	let newTaskTitle = $state('')
+	const taskQ = query(collection(db!, 'Tasks'), orderBy('dateCreated', 'asc'))
 
     onMount(async () => {
 
+		const taskItemsQ = query(collection(db!, 'Task Items'), orderBy('order', 'asc'))
+
 		const [tasksSnapshot, taskItemsSnapshot] = await Promise.all([
-				getDocs(collection(db!, 'Tasks')),
-				getDocs(collection(db!, 'Task Items')),
+				getDocs(taskQ),
+				getDocs(taskItemsQ),
 		])
 
         const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
@@ -35,8 +38,8 @@
 		tasks.data.push({id: '', Name: newTaskTitle})
 		newListModal.close()
 		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle})
-			const tasksSnapshot = await getDocs(collection(db!, 'Tasks'))
+			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp()})
+			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
 			newTaskTitle = ''
@@ -130,9 +133,15 @@
 				</button>
 			</div>
 		</div>
-		<div class="flex-1 h-full justify-center w-full flex">
-			{@render children()}
-
+		<div class="flex-1 h-full justify-center w-full flex items-center">
+			{#if loading}
+				<div class="flex flex-col items-center gap-4">
+					<div class="w-12 h-12 border-4 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+					<p class="text-slate-500 font-medium">Loading...</p>
+				</div>
+			{:else}
+				{@render children()}
+			{/if}
 		</div>
 	</div>
 
