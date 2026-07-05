@@ -1,6 +1,7 @@
 export type TASK = {
     id:string
     Name:string
+    show:boolean
 }
 
 export type TASK_ITEM = {

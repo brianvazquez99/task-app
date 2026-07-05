@@ -27,6 +27,7 @@
 
         const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
         tasks.data = loadedTasks
+		tasks.data.forEach(task => task.show = true)
         const loadedTaskItems = taskItemsSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK_ITEM, 'id'>) }))
         taskItems.data = loadedTaskItems
         loading = false
@@ -35,13 +36,14 @@
 
 	async function addTask(e:Event) {
 		e.preventDefault()
-		tasks.data.push({id: '', Name: newTaskTitle})
+		tasks.data.push({id: '', Name: newTaskTitle, show: true})
 		newListModal.close()
 		try {
 			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp()})
 			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
+			tasks.data.forEach(task => task.show = true)
 			newTaskTitle = ''
 
 		} catch (error) {
@@ -116,7 +118,7 @@
 				{#if showList}
 				{#each tasks.data as task (task.id) }
 				<div class="flex gap-3 items-center">
-					<input type="checkbox" name="task-{task.id}" id="task-{task.id}" class="form-checkbox checked:bg-gray-500">
+					<input bind:checked={task.show} type="checkbox" name="task-{task.id}" id="task-{task.id}" class="form-checkbox checked:bg-gray-500">
 					<label class="text-sm" for="task-{task.id}">{task.Name}</label>
 					<div class="text-end flex-1 me-3 text-gray-600 text-sm">
 						{taskItems.data.filter(item => item.task_id === task.id).length}
