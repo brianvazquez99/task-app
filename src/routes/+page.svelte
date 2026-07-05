@@ -32,6 +32,8 @@ let newTask = $state < TASK_ITEM > ({
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
 
+let dateOption = $state<'today' | 'tomorrow' | 'custom' | null>(null)
+
 let taskItemsMap = $derived(() => {
     const items = taskItems.data.filter(item => !item.completed)
     const itemMap = new Map < string,
@@ -86,6 +88,28 @@ function toggleCompletedShow(taskId: string) {
     completedItemsShowMap = new Map(completedItemsShowMap)
 }
 
+function selectDateOption(option: 'today' | 'tomorrow' | 'custom' | null) {
+    if (dateOption === option) {
+        dateOption = null
+        newTask.date = ''
+    } else {
+        dateOption = option
+    }
+    const today = new Date()
+    today.setHours(0,0,0,0)
+    switch (dateOption) {
+        case 'today':
+            newTask.date = today.toISOString()
+        break;
+        case 'tomorrow':
+        today.setDate(today.getDate() + 1)
+        today.setHours(0,0,0,0)
+        newTask.date = today.toISOString()
+        break
+
+    }
+}
+
 async function addNewTask() {
     if (db) {
         addTaskModal.close()
@@ -129,6 +153,23 @@ function deleteTaskItem(itemId: string) {
 
 }
 
+function formatDate(dateStr: string): string {
+  const hasTime = !dateStr.includes("T04:00:00.000Z")
+  console.log(dateStr, hasTime)
+  const date =new Date(dateStr) 
+
+  if (hasTime) {
+    return date.toLocaleString(); // e.g. "7/5/2026, 3:00:00 PM"
+  } else {
+    return date.toLocaleDateString(); // e.g. "7/5/2026"
+  }
+}
+
+function parseLocalDate(dateStr: string) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 function openDeleteModal(itemId: string) {
     currentItemId = itemId
     deleteItemModal.showModal()
@@ -150,10 +191,28 @@ function openDeleteModal(itemId: string) {
                 <label class="font-semibold" for="description"> Description</label>
                 <textarea required bind:value={newTask.description} name="description" id="description" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
-            <div class="flex flex-col">
-                <label class="font-semibold" for="date"> Date</label>
-
-                <input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold" for="date">Date</label>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick={() => selectDateOption('today')} class:border-blue-500={dateOption === 'today'} class:bg-blue-300={dateOption === 'today'} class:text-blue-600={dateOption === 'today'} class:shadow-sm={dateOption === 'today'} class="flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors">
+                        <span>Today</span>
+                    </button>
+                    <button type="button" onclick={() => selectDateOption('tomorrow')} class:border-blue-500={dateOption === 'tomorrow'} class:bg-blue-300={dateOption === 'tomorrow'} class:text-blue-600={dateOption === 'tomorrow'} class:shadow-sm={dateOption === 'tomorrow'} class="flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors">
+                        <span>Tomorrow</span>
+                    </button>
+                    <button type="button" onclick={() => {
+                        dateOption = 'custom';
+                        const dateInput = document.getElementById('date');
+                        if (dateInput) {
+                            dateInput.showPicker();
+                        }
+                    }} class:border-blue-500={dateOption === 'custom'} class:bg-blue-300={dateOption === 'custom'} class:text-blue-600={dateOption === 'custom'} class:shadow-sm={dateOption === 'custom'} class="ml-auto flex cursor-pointer items-center justify-center rounded-full border border-gray-300 p-2 text-slate-600 transition-colors">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                    <input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="pointer-events-none absolute h-0 w-0 opacity-0" tabindex="-1">
+                </div>
             </div>
             <div class="flex justify-end mt-3">
                 <button type="submit" class="rounded-full bg-blue-500 text-white hover:shadow-xl hover:cursor-pointer font-semibold px-2 py-1">
@@ -201,16 +260,24 @@ function openDeleteModal(itemId: string) {
                 <span class="">Add a Task</span>
             </button>
             <div class="max-h-[400px] overflow-y-auto">
-                {#each taskItemsMap().get(task.id) ?? [] as item (item.order)}
+                {#each taskItemsMap().get(task.id) ?? [] as item, index (index)}
                 <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
                     <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
                     <dl class="">
                         <dt class="font-semibold text-sm">{item.title}</dt>
-                        <dd class="text-gray-600 pb-2 text-xs">{item.description}</dd>
+                        <dd class="text-gray-600 flex flex-col pb-2 text-xs">
+                            <span>
+                                {item.description}
+                            </span>
+                            {#if item.date}
+                                <span class="rounded-full px-2 py-1 text-blue-600 border border-gray-300">
+                                    {formatDate(item.date)}
+                                </span>
+                            {/if}
+                        </dd>
                     </dl>
                     <button class="ml-auto px-2" onclick={() =>openDeleteModal(item.id)}>
-                        <svg width="25px" height="25px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCaredrediered" stredoke-width="0"></g><g id="SVGRepo_tredaceredCaredrediered" stredoke-linecap="redound" stredoke-linejoin="redound"></g><g id="SVGRepo_iconCaredrediered"> <path fill-redule="evenodd" clip-redule="evenodd" d="M15.8787 3.70705C17.0503 2.53547 18.9498 2.53548 20.1213 3.70705L20.2929 3.87862C21.4645 5.05019 21.4645 6.94969 20.2929 8.12126L18.5556 9.85857L8.70713 19.7071C8.57897 19.8352 8.41839 19.9261 8.24256 19.9701L4.24256 20.9701C3.90178 21.0553 3.54129 20.9554 3.29291 20.7071C3.04453 20.4587 2.94468 20.0982 3.02988 19.7574L4.02988 15.7574C4.07384 15.5816 4.16476 15.421 4.29291 15.2928L14.1989 5.38685L15.8787 3.70705ZM18.7071 5.12126C18.3166 4.73074 17.6834 4.73074 17.2929 5.12126L16.3068 6.10738L17.8622 7.72357L18.8787 6.70705C19.2692 6.31653 19.2692 5.68336 18.8787 5.29283L18.7071 5.12126ZM16.4477 9.13804L14.8923 7.52185L5.90299 16.5112L5.37439 18.6256L7.48877 18.097L16.4477 9.13804Z" fill="red"></path> </g></svg>
-                    </button>
+<svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#c91313" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>                    </button>
                 </div>
                 {:else}
                 <div class="flex flex-col items-center gap-1">
