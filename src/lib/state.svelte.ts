@@ -10,6 +10,7 @@ export type TASK_ITEM = {
     description:string
     date:string
     order:number |null
+    completed:boolean
 }
 
 export const  tasks = $state<{data:TASK[]}>({

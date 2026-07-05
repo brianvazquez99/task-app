@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { db } from "$lib/firebase/firebase.app";
 	import { taskItems, tasks, type TASK_ITEM } from "$lib/state.svelte";
-	import { addDoc, collection } from "firebase/firestore";
+	import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 
 console.log(tasks)
 
@@ -12,7 +12,37 @@ let newTask = $state<TASK_ITEM>({
     title:'',
     description:'',
     date:'',
-    order: null
+    order: null,
+    completed:false
+})
+
+let completedItemsShowMap = $state(new Map<string, boolean>())
+
+
+
+let taskItemsMap = $derived(() => {
+    const items = taskItems.data
+    const itemMap = new Map<string, TASK_ITEM[]>()
+    items.forEach(item => {
+        if (!itemMap.has(item.task_id)) {
+            itemMap.set(item.task_id, [])
+        }
+        itemMap.get(item.task_id)!.push(item)
+    })
+    console.log(itemMap)
+    return itemMap
+})
+
+let completedTakItemsMap = $derived(() => {
+    const items = taskItems.data.filter(item => item.completed)
+    const itemMap = new Map<string, TASK_ITEM[]>()
+    items.forEach(item => {
+        if (!itemMap.has(item.task_id)) {
+            itemMap.set(item.task_id, [])
+        }
+        itemMap.get(item.task_id)!.push(item)
+    })
+    return itemMap
 })
 
 
@@ -26,21 +56,35 @@ function openAddNewTaskItemModal(taskId:string) {
 
 }
 
+async function markCompleted(itemId:string) {
+    const docRef = doc(db!, "Task Items", itemId)
+    await updateDoc(docRef, { completed: true })
+}
 
+async function markNotCompleted(itemId:string) {
+    const docRef = doc(db!, "Task Items", itemId)
+    await updateDoc(docRef, { completed: false })
+}
+
+function toggleCompletedShow(taskId: string) {
+    completedItemsShowMap.set(taskId, !completedItemsShowMap.get(taskId))
+    completedItemsShowMap = new Map(completedItemsShowMap)
+}
 
 async function addNewTask() {
     if (db) {
         addTaskModal.close()
-        taskItems.data.push({...newTask});
         try {
-            await addDoc(collection(db, "Task Items"), {task_id:newTask.task_id, title:newTask.title, description:newTask.description, date:newTask.date, order:newTask.order});
+            const docRef = await addDoc(collection(db, "Task Items"), {task_id:newTask.task_id, title:newTask.title, description:newTask.description, date:newTask.date, order:newTask.order, completed:newTask.completed});
+            taskItems.data.push({...newTask, id: docRef.id});
             newTask = {
                 id:'',
                 task_id:'',
                 title:'',
                 description:'',
                 date:'',
-                order: null
+                order: null,
+                completed:false
             }
 
         } catch (error) {
@@ -90,11 +134,11 @@ async function addNewTask() {
             <svg enable-background="new 0 0 24 24" focusable="false" height="24" viewBox="0 0 24 24" width="24" class="text-blue-600"><rect fill="none" height="24" width="24"></rect><path d="M22,5.18L10.59,16.6l-4.24-4.24l1.41-1.41l2.83,2.83l10-10L22,5.18z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8 c1.57,0,3.04,0.46,4.28,1.25l1.45-1.45C16.1,2.67,14.13,2,12,2C6.48,2,2,6.48,2,12s4.48,10,10,10c1.73,0,3.36-0.44,4.78-1.22 l-1.5-1.5C14.28,19.74,13.17,20,12,20z M19,15h-3v2h3v3h2v-3h3v-2h-3v-3h-2V15z"></path></svg>
             <span class="">Add a Task</span>
         </button>
-        <div class="max-h-[500px] overflow-y-auto">
-            {#each taskItems.data as item, index (index) }
-            {#if item.task_id === task.id}
+        <div class="max-h-[400px] overflow-y-auto">
+            {#each taskItemsMap().get(task.id) ?? [] as item (item.order)}
+            {#if item.completed === false}
             <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
-                <input type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
+                <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
                 <dl class="">
                     <dt class="font-semibold text-sm">{item.title}</dt>
                     <dd class="text-gray-600 pb-2 text-xs">{item.description}</dd>
@@ -102,9 +146,33 @@ async function addNewTask() {
             </div>
             {/if}
             {/each}
-
         </div>
         </div>
+        {#if completedTakItemsMap().get(task.id)?.length}
+        <div class="flex flex-col gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <div class="flex items-center gap-2">
+                <span class="font-semibold text-slate-600 text-sm">Completed ({completedTakItemsMap().get(task.id)?.length})</span>
+                <button aria-label="Toggle completed show   items" type="button" onclick={() => toggleCompletedShow(task.id)} class="p-1 hover:bg-gray-200 rounded transition-colors">
+                    <svg class:rotate-180={completedItemsShowMap.get(task.id)} width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-gray-600 transition-transform">
+                        <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+            </div>
+            {#if completedItemsShowMap.get(task.id) == true}
+            <div class="flex flex-col max-h-48 overflow-y-auto">
+                {#each completedTakItemsMap().get(task.id) ?? [] as item (item.order)}
+                <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
+                    <input onchange={() => markNotCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
+                    <dl class="">
+                        <dt class="font-semibold text-sm line-through">{item.title}</dt>
+                        <dd class="text-gray-600 pb-2 text-xs">{item.description}</dd>
+                    </dl>
+                </div>
+                {/each}
+            </div>
+            {/if}
+        </div>
+        {/if}
     </div>
 
     {/each}
