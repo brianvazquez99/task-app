@@ -198,10 +198,7 @@ function formatDate(dateStr: string): string {
   }
 }
 
-function parseLocalDate(dateStr: string) {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
+
 
 function openDeleteModal(itemId: string) {
     currentItemId = itemId
@@ -295,7 +292,7 @@ function openDeleteModal(itemId: string) {
             </button>
             <div class="max-h-[400px] overflow-y-auto">
                 {#each taskItemsMap().get(task.id) ?? [] as item, index (index)}
-                <div class="relative mb-2 overflow-hidden rounded-lg">
+                <div class="relative mb-2 overflow-hidden rounded-lg animate-[fadeInUp_220ms_ease-out]">
                     <button type="button" class="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500 px-4 text-sm font-semibold text-white" onclick={(event) => { event.stopPropagation(); openDeleteModal(item.id) }}>
                         Delete
                     </button>
