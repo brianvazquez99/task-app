@@ -31,6 +31,9 @@ let newTask = $state < TASK_ITEM > ({
 })
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
+let swipeOffsets = $state(new Map<string, number>())
+let swipeStartX = $state<number | null>(null)
+let activeSwipeId = $state<string | null>(null)
 
 let dateOption = $state<'today' | 'tomorrow' | 'custom' | null>(null)
 
@@ -86,6 +89,36 @@ function openAddNewTaskItemModal(taskId: string) {
 function toggleCompletedShow(taskId: string) {
     completedItemsShowMap.set(taskId, !completedItemsShowMap.get(taskId))
     completedItemsShowMap = new Map(completedItemsShowMap)
+}
+
+function startSwipe(event: PointerEvent, itemId: string) {
+    swipeStartX = event.clientX
+    activeSwipeId = itemId
+}
+
+function moveSwipe(event: PointerEvent, itemId: string) {
+    if (activeSwipeId !== itemId || swipeStartX === null) return
+
+    const delta = event.clientX - swipeStartX
+    const offset = Math.min(0, Math.max(-96, delta))
+    const nextOffsets = new Map(swipeOffsets)
+    nextOffsets.set(itemId, offset)
+    swipeOffsets = nextOffsets
+}
+
+function endSwipe(itemId: string) {
+    const offset = swipeOffsets.get(itemId) ?? 0
+    const nextOffsets = new Map(swipeOffsets)
+    nextOffsets.set(itemId, offset < -48 ? -96 : 0)
+    swipeOffsets = nextOffsets
+    swipeStartX = null
+    activeSwipeId = null
+}
+
+function resetSwipe(itemId: string) {
+    const nextOffsets = new Map(swipeOffsets)
+    nextOffsets.set(itemId, 0)
+    swipeOffsets = nextOffsets
 }
 
 function selectDateOption(option: 'today' | 'tomorrow' | 'custom' | null) {
@@ -172,6 +205,7 @@ function parseLocalDate(dateStr: string) {
 
 function openDeleteModal(itemId: string) {
     currentItemId = itemId
+    resetSwipe(itemId)
     deleteItemModal.showModal()
 }
 </script>
@@ -261,23 +295,34 @@ function openDeleteModal(itemId: string) {
             </button>
             <div class="max-h-[400px] overflow-y-auto">
                 {#each taskItemsMap().get(task.id) ?? [] as item, index (index)}
-                <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
-                    <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
-                    <dl class="">
-                        <dt class="font-semibold text-sm">{item.title}</dt>
-                        <dd class="text-gray-600 flex flex-col pb-2 text-xs">
-                            <span>
-                                {item.description}
-                            </span>
-                            {#if item.date}
-                                <span class="rounded-full px-2 py-1 text-blue-600 border border-gray-300">
-                                    {formatDate(item.date)}
+                <div class="relative mb-2 overflow-hidden rounded-lg">
+                    <button type="button" class="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500 px-4 text-sm font-semibold text-white" onclick={(event) => { event.stopPropagation(); openDeleteModal(item.id) }}>
+                        Delete
+                    </button>
+                    <div
+                        class="relative z-10 flex items-start gap-3 bg-white px-1 pt-2 transition-transform duration-200 hover:bg-gray-200"
+                        style={`transform: translateX(${swipeOffsets.get(item.id) ?? 0}px);`}
+                        onpointerdown={(event) => startSwipe(event, item.id)}
+                        onpointermove={(event) => moveSwipe(event, item.id)}
+                        onpointerup={() => endSwipe(item.id)}
+                        onpointerleave={() => endSwipe(item.id)}
+                        onpointercancel={() => endSwipe(item.id)}
+                    >
+                        <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
+                        <dl class="pr-10">
+                            <dt class="font-semibold text-sm">{item.title}</dt>
+                            <dd class="flex flex-col pb-2 text-xs text-gray-600">
+                                <span>
+                                    {item.description}
                                 </span>
-                            {/if}
-                        </dd>
-                    </dl>
-                    <button class="ml-auto px-2" onclick={() =>openDeleteModal(item.id)}>
-<svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18 6L17.1991 18.0129C17.129 19.065 17.0939 19.5911 16.8667 19.99C16.6666 20.3412 16.3648 20.6235 16.0011 20.7998C15.588 21 15.0607 21 14.0062 21H9.99377C8.93927 21 8.41202 21 7.99889 20.7998C7.63517 20.6235 7.33339 20.3412 7.13332 19.99C6.90607 19.5911 6.871 19.065 6.80086 18.0129L6 6M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M14 10V17M10 10V17" stroke="#c91313" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>                    </button>
+                                {#if item.date}
+                                    <span class="mt-1 rounded-full pointer-events-none border border-gray-300 px-2 py-1 text-blue-600">
+                                        {formatDate(item.date)}
+                                    </span>
+                                {/if}
+                            </dd>
+                        </dl>
+                    </div>
                 </div>
                 {:else}
                 <div class="flex flex-col items-center gap-1">
