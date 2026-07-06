@@ -2,7 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import {taskItems, tasks, type TASK, type TASK_ITEM} from '$lib/state.svelte'
-	import { addDoc, collection, getDocs, orderBy, query, serverTimestamp,  } from 'firebase/firestore';
+	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc,  } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import { db } from '$lib/firebase/firebase.app';
 
@@ -28,8 +28,23 @@
         const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
         tasks.data = loadedTasks
 		tasks.data.forEach(task => task.show = true)
+		const todayTask = tasks.data.find(task => task.Name === 'Today')
+		const todayDate = new Date().toLocaleDateString()
         const loadedTaskItems = taskItemsSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK_ITEM, 'id'>) }))
         taskItems.data = loadedTaskItems
+		if (todayTask) {
+
+			taskItems.data.forEach(item => {
+				const itemsDate = new Date(item.date).toLocaleDateString()
+				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
+					const itemsTask = tasks.data.find(task => task.id === item.task_id)
+					item.task_id = todayTask.id
+					item.title = item.title + `(${itemsTask?.Name})`
+					const itemDocRef = doc(db!, 'Task Items', item.id)
+					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title + `(${itemsTask?.Name})`})
+				}
+			})
+		}
         loading = false
 
     })

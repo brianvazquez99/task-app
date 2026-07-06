@@ -69,16 +69,16 @@ function openAddNewTaskItemModal(taskId: string) {
 
 }
 
-async function markCompleted(itemId: string) {
+ function markCompleted(itemId: string) {
     const docRef = doc(db!, "Task Items", itemId)
-    await updateDoc(docRef, {
+     updateDoc(docRef, {
         completed: true
     })
 }
 
-async function markNotCompleted(itemId: string) {
+ function markNotCompleted(itemId: string) {
     const docRef = doc(db!, "Task Items", itemId)
-    await updateDoc(docRef, {
+     updateDoc(docRef, {
         completed: false
     })
 }
@@ -156,7 +156,7 @@ function deleteTaskItem(itemId: string) {
 function formatDate(dateStr: string): string {
   const hasTime = !dateStr.includes("T04:00:00.000Z")
   console.log(dateStr, hasTime)
-  const date =new Date(dateStr) 
+  const date =new Date(dateStr)
 
   if (hasTime) {
     return date.toLocaleString(); // e.g. "7/5/2026, 3:00:00 PM"
