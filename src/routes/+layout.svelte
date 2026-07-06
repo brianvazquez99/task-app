@@ -38,10 +38,11 @@
 				const itemsDate = new Date(item.date).toLocaleDateString()
 				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
 					const itemsTask = tasks.data.find(task => task.id === item.task_id)
+					const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
 					item.task_id = todayTask.id
 					item.title = item.title + `(${itemsTask?.Name})`
 					const itemDocRef = doc(db!, 'Task Items', item.id)
-					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title + `(${itemsTask?.Name})`})
+					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title , order: todayTaskItemsCount})
 				}
 			})
 		}
