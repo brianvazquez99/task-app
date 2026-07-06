@@ -2,6 +2,7 @@ export type TASK = {
     id:string
     Name:string
     show:boolean
+    color:string
 }
 
 export type TASK_ITEM = {

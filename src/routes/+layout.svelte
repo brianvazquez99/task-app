@@ -14,7 +14,9 @@
 	let showList = $state<boolean>(true)
 	let newListModal:HTMLDialogElement
 	let newTaskTitle = $state('')
+	let newTaskColor = $state('#ffffff')
 	const taskQ = query(collection(db!, 'Tasks'), orderBy('dateCreated', 'asc'))
+
 
     onMount(async () => {
 
@@ -52,15 +54,16 @@
 
 	async function addTask(e:Event) {
 		e.preventDefault()
-		tasks.data.push({id: '', Name: newTaskTitle, show: true})
+		tasks.data.push({id: '', Name: newTaskTitle, show: true, color: newTaskColor})
 		newListModal.close()
 		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp()})
+			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp(), color: newTaskColor})
 			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
 			tasks.data.forEach(task => task.show = true)
 			newTaskTitle = ''
+			newTaskColor = '#ffffff'
 
 		} catch (error) {
 			console.error(error);
@@ -82,7 +85,14 @@
 					bind:value={newTaskTitle}
 					placeholder="Enter list name..."
 					class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-					autofocus
+				/>
+			</div>
+			<div class="flex flex-col gap-2">
+				<label for="color" class="text-sm font-medium text-slate-700">Color</label>
+				<input bind:value={newTaskColor}
+					type="color"
+					id="color"
+					class=" border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 			</div>
 			<div class="flex gap-3 justify-end mt-4">

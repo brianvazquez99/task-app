@@ -286,7 +286,7 @@ function openDeleteModal(itemId: string) {
     {#each tasks.data as task, index (index) }
     {#if task.show}
 
-    <div class="bg-white rounded-lg min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
+    <div style={`background-color: ${task.color}`} class=" rounded-lg min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
         <div class="text-lg ml-4 mt-2">{task.Name}</div>
         <div class="flex flex-col gap-3 p-2">
             <button type="button" onclick={() => openAddNewTaskItemModal(task.id)} class="flex justify-start gap-4 items-center px-2 py-1 hover:cursor-pointer hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-full">
