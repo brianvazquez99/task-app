@@ -146,6 +146,9 @@ function selectDateOption(option: 'today' | 'tomorrow' | 'custom' | null) {
 async function addNewTask() {
     if (db) {
         addTaskModal.close()
+        taskItems.data.push({
+            ...newTask
+        });
         try {
             const docRef = await addDoc(collection(db, "Task Items"), {
                 task_id: newTask.task_id,
@@ -155,10 +158,7 @@ async function addNewTask() {
                 order: newTask.order,
                 completed: newTask.completed
             });
-            taskItems.data.push({
-                ...newTask,
-                id: docRef.id
-            });
+            taskItems.data[taskItems.data.length -1].id = docRef.id
             newTask = {
                 id: '',
                 task_id: '',

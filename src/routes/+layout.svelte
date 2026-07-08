@@ -15,7 +15,21 @@
 	let newListModal:HTMLDialogElement
 	let newTaskTitle = $state('')
 	let newTaskColor = $state('#ffffff')
+
+	let createModal:HTMLDialogElement
+
+	let newTask = $state < TASK_ITEM > ({
+    id: '',
+    task_id: '',
+    title: '',
+    description: '',
+    date: '',
+    order: null,
+    completed: false
+})
+
 	const taskQ = query(collection(db!, 'Tasks'), orderBy('dateCreated', 'asc'))
+
 
 
     onMount(async () => {
@@ -70,9 +84,73 @@
 		}
 
 	}
+
+	async function addNewTaskItem() {
+    if (db) {
+        createModal.close()
+		taskItems.data.push({
+			...newTask,
+		});
+        try {
+            const docRef = await addDoc(collection(db, "Task Items"), {
+                task_id: newTask.task_id,
+                title: newTask.title,
+                description: newTask.description,
+                date: newTask.date,
+                order: tasks.data.filter(item => item.id ===  newTask.task_id).length,
+                completed: newTask.completed
+            });
+			taskItems.data[taskItems.data.length -1].id = docRef.id
+            newTask = {
+                id: '',
+                task_id: '',
+                title: '',
+                description: '',
+                date: '',
+                order: null,
+                completed: false
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<dialog bind:this={createModal} class="rounded-lg m-auto shadow-2xl backdrop:bg-black/50">
+	<div class="w-96 p-6">
+	<form method="post" onsubmit={(e) => {addNewTaskItem(); e.preventDefault();}}>
+		<div class="flex flex-col gap-2">
+			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class="bg-gray-200 rounded-lg border-none">
+			<textarea required bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class="bg-gray-200 rounded-lg border-none"></textarea>
+			<div class="flex flex-col gap-1">
+				<label for="date">Date</label>
+				<input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="bg-gray-200 rounded-lg border-none">
+			</div>
+			<div class="flex flex-col gap-1">
+				<label for="task">Task</label>
+				<select required bind:value={newTask.task_id} name="task" id="task" class="bg-gray-200 rounded-lg border-none">
+					{#each tasks.data as task (task.id)}
+						<option value={task.id}>{task.Name}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="flex justify-end p-2 gap-1">
+				<button type="button" onclick={() => createModal.close()} class="bg-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
+					Cancel
+				</button>
+				<button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+					Save
+				</button>
+
+			</div>
+		</div>
+	</form>
+	</div>
+</dialog>
+
 <dialog bind:this={newListModal} class="rounded-lg m-auto shadow-2xl backdrop:bg-black/50">
 	<div class="w-96 p-6">
 		<h2 class="text-xl font-semibold text-slate-800 mb-4">Create New List</h2>
@@ -122,14 +200,14 @@
 	</div>
 	<div class="flex w-full h-full">
 		<div class="w-50 flex flex-col gap-4 p-3">
-			<div class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
+			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
 				<span class="text-xl flex text-center font-semibold">+</span>
 				<span class="">
 					Create
 
 				</span>
 
-			</div>
+			</button>
 			<div class="flex flex-col ">
 				<div class="flex justify-between items-center">
 					<span class="text-sm font-semibold text-slate-500">
