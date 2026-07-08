@@ -9,7 +9,6 @@
 
 
 	let { children } = $props();
-	let today = new Date().toDateString()
     let loading = $state(true)
 	let showList = $state<boolean>(true)
 	let newListModal:HTMLDialogElement
@@ -195,9 +194,7 @@
 	</div>
 </dialog>
 <div class="bg-gray-100 min-h-dvh w-full flex flex-col">
-	<div class="w-full flex justify-center p-2">
-		<span class="text-xl font-semibold text-slate-400">{today}</span>
-	</div>
+
 	<div class="flex w-full h-full">
 		<div class="w-50 flex flex-col gap-4 p-3">
 			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">

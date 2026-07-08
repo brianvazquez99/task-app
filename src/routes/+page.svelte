@@ -34,6 +34,7 @@ let completedItemsShowMap = $state(new Map < string, boolean > ())
 let swipeOffsets = $state(new Map<string, number>())
 let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
+let today = new Date().toDateString()
 
 let dateOption = $state<'today' | 'tomorrow' | 'custom' | null>(null)
 
@@ -280,6 +281,9 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
+<div class="w-full flex justify-center p-2">
+		<span class="text-xl font-semibold text-slate-400">{today}</span>
+	</div>
     {#each tasks.data as task, index (index) }
     {#if task.show}
 
