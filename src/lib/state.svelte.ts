@@ -1,3 +1,5 @@
+import type { UserCredential } from "firebase/auth"
+
 export type TASK = {
     id:string
     Name:string
@@ -21,4 +23,8 @@ export const  tasks = $state<{data:TASK[]}>({
 
 export const taskItems = $state<{data:TASK_ITEM[]}>({
     data:[]
+})
+
+export const user = $state<{data: UserCredential | null} >({
+    data: null
 })

@@ -2,6 +2,7 @@
 import { getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import {
 	PUBLIC_apiKey,
 	PUBLIC_authDomain,
@@ -36,5 +37,6 @@ if (!getApps().length && browser) {
 }
 const db = browser ? getFirestore(fireBaseApp!) : null;
 const analytics = getAnalytics(fireBaseApp);
+const auth = getAuth(fireBaseApp)
 
-export { fireBaseApp, db, analytics };
+export { fireBaseApp, db, analytics, auth };

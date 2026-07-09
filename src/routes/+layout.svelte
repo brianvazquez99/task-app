@@ -1,10 +1,11 @@
 <script lang="ts">
-	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import {taskItems, tasks, type TASK, type TASK_ITEM} from '$lib/state.svelte'
-	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc,  } from 'firebase/firestore';
+	import { auth, db } from '$lib/firebase/firebase.app';
+	import { taskItems, tasks, user, type TASK, type TASK_ITEM } from '$lib/state.svelte';
+	import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
-	import { db } from '$lib/firebase/firebase.app';
+	import './layout.css';
 
 
 
@@ -32,6 +33,12 @@
 
 
     onMount(async () => {
+
+		const provider = new GoogleAuthProvider()
+
+		await signInWithPopup(auth, provider).then((result) => {
+			user!.data = result
+		})
 
 		const taskItemsQ = query(collection(db!, 'Task Items'), orderBy('order', 'asc'))
 

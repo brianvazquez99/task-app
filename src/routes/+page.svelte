@@ -5,6 +5,7 @@ import {
 import {
     taskItems,
     tasks,
+    user,
     type TASK_ITEM
 } from "$lib/state.svelte";
 import {
@@ -37,6 +38,21 @@ let activeSwipeId = $state<string | null>(null)
 let today = new Date().toDateString()
 
 let dateOption = $state<'today' | 'tomorrow' | 'custom' | null>(null)
+
+let userInitials = $derived(() => {
+    const userInfo = user
+    if (userInfo.data) {
+        const name = userInfo.data.user.displayName
+        const seperatedName = name?.split(' ')
+        if (seperatedName) {
+            const firstInitial = seperatedName[0][0]
+            const lastInitial = seperatedName[1][0]
+            return `${firstInitial}${lastInitial}`
+        }
+        return ''
+    }
+    return ''
+})
 
 let taskItemsMap = $derived(() => {
     const items = taskItems.data.filter(item => !item.completed)
@@ -281,7 +297,8 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
-<div class="w-full flex justify-center p-2">
+<div class="w-full flex flex-col items-center  p-2">
+		<span class=" font-semibold text-white self-end shadow-lg rounded-full px-2 py-1 bg-blue-700">{userInitials()}</span>
 		<span class="text-xl font-semibold text-slate-400">{today}</span>
 	</div>
     {#each tasks.data as task, index (index) }
