@@ -30,17 +30,21 @@
 
 	const taskQ = query(collection(db!, 'Tasks'), orderBy('dateCreated', 'asc'))
 
+let loggedIn = $state<boolean>(false)
 
-
-    onMount(async () => {
-
+	async function logIn() {
 		const provider = new GoogleAuthProvider()
 
-		setPersistence(auth, browserSessionPersistence);
+		await setPersistence(auth, browserSessionPersistence).then(() => {
 
-		await signInWithPopup(auth, provider).then((result) => {
-			user!.data = result
-		})
+			return signInWithPopup(auth, provider).then((result) => {
+				user!.data = result
+				loggedIn = true
+			})
+		});
+
+
+
 
 		const taskItemsQ = query(collection(db!, 'Task Items'), orderBy('order', 'asc'))
 
@@ -71,6 +75,18 @@
 			})
 		}
         loading = false
+	}
+
+
+
+    onMount(async () => {
+
+		if (user.data == null) {
+			loggedIn = false
+		}
+		else {
+			loggedIn = true
+		}
 
     })
 
@@ -204,6 +220,7 @@
 </dialog>
 <div class="bg-gray-100 min-h-dvh w-full flex flex-col">
 
+	{#if loggedIn}
 	<div class="flex w-full h-full">
 		<div class="w-50 flex flex-col gap-4 p-3">
 			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
@@ -256,5 +273,13 @@
 			{/if}
 		</div>
 	</div>
+	{:else}
+	<div class="w-full flex-1 flex items-center justify-center">
+
+		<button onclick={logIn} class="bg-blue-600 px-2 py-1 rounded shadow text-white font-semibold">
+			Log in
+		</button>
+	</div>
+	{/if}
 
 </div>
