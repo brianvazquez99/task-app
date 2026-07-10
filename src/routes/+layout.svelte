@@ -2,7 +2,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { taskItems, tasks, user, type TASK, type TASK_ITEM } from '$lib/state.svelte';
-	import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+	import { browserSessionPersistence, GoogleAuthProvider, setPersistence, signInWithPopup } from 'firebase/auth';
 	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
@@ -35,6 +35,8 @@
     onMount(async () => {
 
 		const provider = new GoogleAuthProvider()
+
+		setPersistence(auth, browserSessionPersistence);
 
 		await signInWithPopup(auth, provider).then((result) => {
 			user!.data = result

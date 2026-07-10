@@ -297,10 +297,10 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
-<div class="w-full flex flex-col items-center  p-2">
-		<span class=" font-semibold text-white self-end shadow-lg rounded-full px-2 py-1 bg-blue-700">{userInitials()}</span>
-		<span class="text-xl font-semibold text-slate-400">{today}</span>
-	</div>
+<div class="relative flex w-full items-center justify-center p-2">
+    <span class="text-xl font-semibold text-slate-400">{today}</span>
+    <span class="absolute right-2 rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
+</div>
     {#each tasks.data as task, index (index) }
     {#if task.show}
 
