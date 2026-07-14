@@ -83,6 +83,7 @@ let loggedIn = $state<boolean>(false)
 
 		if (user.data == null) {
 			loggedIn = false
+			logIn()
 		}
 		else {
 			loggedIn = true
@@ -220,8 +221,7 @@ let loggedIn = $state<boolean>(false)
 </dialog>
 <div class="bg-gray-100 min-h-dvh w-full flex flex-col">
 
-	{#if loggedIn}
-	<div class="flex w-full h-full">
+	<div class="flex w-full h-full flex-1">
 		<div class="w-50 flex flex-col gap-4 p-3">
 			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
 				<span class="text-xl flex text-center font-semibold">+</span>
@@ -262,24 +262,81 @@ let loggedIn = $state<boolean>(false)
 				</button>
 			</div>
 		</div>
-		<div class="flex-1 h-full justify-center w-full flex items-center">
+		<div class="flex-1  justify-center w-full flex ">
+		{#if loggedIn}
 			{#if loading}
-				<div class="flex flex-col items-center gap-4">
-					<div class="w-12 h-12 border-4 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
-					<p class="text-slate-500 font-medium">Loading...</p>
+			<div class="flex flex-col p-4 gap-8 mt-15">
+
+				<div class=" h-70 rounded-lg  bg-white min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
+								<div class="w-40 mt-4 ms-2 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 <div class="flex flex-col gap-3 p-2 mt-4">
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full  w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+
+				 </div>
+
 				</div>
+				<div class=" h-70 rounded-lg  bg-white min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
+								<div class="w-40 mt-4 ms-2 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 <div class="flex flex-col gap-3 p-2 mt-4">
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full  w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+				 <div class="flex items-center gap-2">
+								<div class="rounded-full w-5 h-5 bg-gray-300 animate-pulse"></div>
+
+								<div class="w-40 rounded h-5 bg-gray-300 animate-pulse"></div>
+				 </div>
+
+				 </div>
+
+				</div>
+			</div>
+
 			{:else}
 				{@render children()}
 			{/if}
-		</div>
-	</div>
+
 	{:else}
-	<div class="w-full flex-1 flex items-center justify-center">
+	<div class="w-full  flex-1 flex items-center justify-center">
 
 		<button onclick={logIn} class="bg-blue-600 px-2 py-1 rounded shadow text-white font-semibold">
 			Log in
 		</button>
 	</div>
 	{/if}
+		</div>
+	</div>
+
 
 </div>
