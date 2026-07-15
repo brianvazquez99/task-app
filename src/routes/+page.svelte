@@ -20,6 +20,7 @@ console.log(tasks)
 
 let addTaskModal: HTMLDialogElement
 let deleteItemModal: HTMLDialogElement
+let dateTimeModal: HTMLDialogElement
 let currentItemId: string
 let newTask = $state < TASK_ITEM > ({
     id: '',
@@ -227,6 +228,10 @@ function openDeleteModal(itemId: string) {
     deleteItemModal.showModal()
 }
 </script>
+
+<dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={dateTimeModal} onclick={() => dateTimeModal.close()}>
+
+</dialog>
 
 <dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
     <div class="w-96 p-6">
