@@ -3,7 +3,7 @@
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { taskItems, tasks, user, type TASK, type TASK_ITEM } from '$lib/state.svelte';
 	import { browserSessionPersistence, GoogleAuthProvider, setPersistence, signInWithPopup } from 'firebase/auth';
-	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, } from 'firebase/firestore';
+	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
 
@@ -25,10 +25,10 @@
     description: '',
     date: '',
     order: null,
-    completed: false
+    completed: false,
+	userId: ''
 })
 
-	const taskQ = query(collection(db!, 'Tasks'), orderBy('dateCreated', 'asc'))
 
 let loggedIn = $state<boolean>(false)
 
@@ -39,14 +39,14 @@ let loggedIn = $state<boolean>(false)
 
 			return signInWithPopup(auth, provider).then((result) => {
 				user!.data = result
-				loggedIn = true
-			})
+				loggedIn = true})
 		});
 
 
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
+		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.user.uid), orderBy('order', 'asc'))
 
 
-		const taskItemsQ = query(collection(db!, 'Task Items'), orderBy('order', 'asc'))
 
 		const [tasksSnapshot, taskItemsSnapshot] = await Promise.all([
 				getDocs(taskQ),
@@ -93,10 +93,11 @@ let loggedIn = $state<boolean>(false)
 
 	async function addTask(e:Event) {
 		e.preventDefault()
-		tasks.data.push({id: '', Name: newTaskTitle, show: true, color: newTaskColor})
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: newTaskTitle, show: true, color: newTaskColor, userId: user.data!.user.uid!})
 		newListModal.close()
 		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp(), color: newTaskColor})
+			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp(), color: newTaskColor, userId: user.data!.user.uid!})
 			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
@@ -123,7 +124,8 @@ let loggedIn = $state<boolean>(false)
                 description: newTask.description,
                 date: newTask.date,
                 order: tasks.data.filter(item => item.id ===  newTask.task_id).length,
-                completed: newTask.completed
+                completed: newTask.completed,
+				userId: user.data!.user.uid!
             });
 			taskItems.data[taskItems.data.length -1].id = docRef.id
             newTask = {
@@ -133,7 +135,8 @@ let loggedIn = $state<boolean>(false)
                 description: '',
                 date: '',
                 order: null,
-                completed: false
+                completed: false,
+				userId: user.data!.user.uid
             }
 
         } catch (error) {

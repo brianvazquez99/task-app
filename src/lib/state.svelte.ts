@@ -5,6 +5,7 @@ export type TASK = {
     Name:string
     show:boolean
     color:string
+    userId:string
 }
 
 export type TASK_ITEM = {
@@ -15,6 +16,8 @@ export type TASK_ITEM = {
     date:string
     order:number |null
     completed:boolean
+    userId:string
+
 }
 
 export const  tasks = $state<{data:TASK[]}>({

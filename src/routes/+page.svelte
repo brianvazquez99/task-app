@@ -28,7 +28,8 @@ let newTask = $state < TASK_ITEM > ({
     description: '',
     date: '',
     order: null,
-    completed: false
+    completed: false,
+    userId: ''
 })
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
@@ -173,7 +174,9 @@ async function addNewTask() {
                 description: newTask.description,
                 date: newTask.date,
                 order: newTask.order,
-                completed: newTask.completed
+                completed: newTask.completed,
+                userId: user.data!.user.uid
+
             });
             taskItems.data[taskItems.data.length -1].id = docRef.id
             newTask = {
@@ -183,7 +186,8 @@ async function addNewTask() {
                 description: '',
                 date: '',
                 order: null,
-                completed: false
+                completed: false,
+                userId: user.data!.user.uid
             }
 
         } catch (error) {
