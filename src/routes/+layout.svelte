@@ -64,7 +64,10 @@ let loggedIn = $state<boolean>(false)
 		if (todayTask) {
 
 			taskItems.data.forEach(item => {
-				const itemsDate = new Date(item.date).toLocaleDateString()
+				   const [year, month, day] = item.date.split("-").map(Number);
+    				const itemsDate = new Date(year, month - 1, day).toLocaleDateString();
+					console.log('item date', itemsDate)
+					console.log('todays date', todayDate)
 				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
 					const itemsTask = tasks.data.find(task => task.id === item.task_id)
 					const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
@@ -74,6 +77,23 @@ let loggedIn = $state<boolean>(false)
 					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title , order: todayTaskItemsCount})
 				}
 			})
+		}
+		//if todayTask does not exist, create
+		else {
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: 'Today', show: true, color: '#ffffff', userId: user.data!.user.uid!})
+		try {
+			await addDoc(collection(db!, 'Tasks'), {Name: 'Today', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.user.uid!})
+			const tasksSnapshot = await getDocs(taskQ)
+			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+			tasks.data = loadedTasks
+			tasks.data.forEach(task => task.show = true)
+			newTaskTitle = ''
+			newTaskColor = '#ffffff'
+
+		} catch (error) {
+			console.error(error);
+		}
 		}
         loading = false
 	}
