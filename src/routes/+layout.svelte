@@ -26,7 +26,8 @@
     date: '',
     order: null,
     completed: false,
-	userId: ''
+	userId: '',
+	time: ''
 })
 
 
@@ -123,6 +124,7 @@ let loggedIn = $state<boolean>(false)
                 title: newTask.title,
                 description: newTask.description,
                 date: newTask.date,
+				time: newTask.time,
                 order: tasks.data.filter(item => item.id ===  newTask.task_id).length,
                 completed: newTask.completed,
 				userId: user.data!.user.uid!
@@ -134,6 +136,7 @@ let loggedIn = $state<boolean>(false)
                 title: '',
                 description: '',
                 date: '',
+				time: '',
                 order: null,
                 completed: false,
 				userId: user.data!.user.uid
@@ -155,7 +158,11 @@ let loggedIn = $state<boolean>(false)
 			<textarea required bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class="bg-gray-200 rounded-lg border-none"></textarea>
 			<div class="flex flex-col gap-1">
 				<label for="date">Date</label>
-				<input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="bg-gray-200 rounded-lg border-none">
+				<input bind:value={newTask.date} type="date" name="date" id="date" class="bg-gray-200 rounded-lg border-none">
+			</div>
+			<div class="flex flex-col gap-1">
+				<label for="time">Time</label>
+				<input bind:value={newTask.time} type="time" name="time" id="time" class="bg-gray-200 rounded-lg border-none">
 			</div>
 			<div class="flex flex-col gap-1">
 				<label for="task">Task</label>
