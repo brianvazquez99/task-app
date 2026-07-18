@@ -14,6 +14,7 @@ export type TASK_ITEM = {
     title:string
     description:string
     date:string
+    time:string
     order:number |null
     completed:boolean
     userId:string

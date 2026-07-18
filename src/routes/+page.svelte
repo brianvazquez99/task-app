@@ -1,37 +1,41 @@
 <script lang="ts">
 import {
-    db
+	db
 } from "$lib/firebase/firebase.app";
 import {
-    taskItems,
-    tasks,
-    user,
-    type TASK_ITEM
+	taskItems,
+	tasks,
+	user,
+	type TASK_ITEM
 } from "$lib/state.svelte";
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    updateDoc
+	addDoc,
+	collection,
+	deleteDoc,
+	doc,
+	updateDoc
 } from "firebase/firestore";
-
-console.log(tasks)
 
 let addTaskModal: HTMLDialogElement
 let deleteItemModal: HTMLDialogElement
-let dateTimeModal: HTMLDialogElement
 let currentItemId: string
-let newTask = $state < TASK_ITEM > ({
+let newTask = $state <TASK_ITEM > ({
     id: '',
     task_id: '',
     title: '',
     description: '',
     date: '',
+    time: '',
     order: null,
     completed: false,
     userId: ''
 })
+
+let isDateOpen = $state<boolean>(false)
+
+    $effect(() => {
+        console.log('date open', isDateOpen)
+    })
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
 let swipeOffsets = $state(new Map<string, number>())
@@ -39,7 +43,6 @@ let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
 let today = new Date().toDateString()
 
-let dateOption = $state<'today' | 'tomorrow' | 'custom' | null>(null)
 
 let userInitials = $derived(() => {
     const userInfo = user
@@ -82,6 +85,12 @@ let completedTakItemsMap = $derived(() => {
     })
     return itemMap
 })
+
+let dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "2-digit",
+  day: "2-digit",
+  year: "numeric",
+});
 
 function openAddNewTaskItemModal(taskId: string) {
     newTask.task_id = taskId
@@ -140,30 +149,10 @@ function resetSwipe(itemId: string) {
     swipeOffsets = nextOffsets
 }
 
-function selectDateOption(option: 'today' | 'tomorrow' | 'custom' | null) {
-    if (dateOption === option) {
-        dateOption = null
-        newTask.date = ''
-    } else {
-        dateOption = option
-    }
-    const today = new Date()
-    today.setHours(0,0,0,0)
-    switch (dateOption) {
-        case 'today':
-            newTask.date = today.toISOString()
-        break;
-        case 'tomorrow':
-        today.setDate(today.getDate() + 1)
-        today.setHours(0,0,0,0)
-        newTask.date = today.toISOString()
-        break
-
-    }
-}
 
 async function addNewTask() {
     if (db) {
+        console.log(newTask)
         addTaskModal.close()
         taskItems.data.push({
             ...newTask
@@ -176,7 +165,8 @@ async function addNewTask() {
                 date: newTask.date,
                 order: newTask.order,
                 completed: newTask.completed,
-                userId: user.data!.user.uid
+                userId: user.data!.user.uid,
+                time: newTask.time
 
             });
             taskItems.data[taskItems.data.length -1].id = docRef.id
@@ -186,6 +176,7 @@ async function addNewTask() {
                 title: '',
                 description: '',
                 date: '',
+                time: '',
                 order: null,
                 completed: false,
                 userId: user.data!.user.uid
@@ -208,16 +199,18 @@ function deleteTaskItem(itemId: string) {
 
 }
 
-function formatDate(dateStr: string): string {
-  const hasTime = !dateStr.includes("T04:00:00.000Z")
-  console.log(dateStr, hasTime)
-  const date =new Date(dateStr)
+function formatDate(dateStr:string) :string {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return dateFormatter.format(date)
+}
 
-  if (hasTime) {
-    return date.toLocaleString(); // e.g. "7/5/2026, 3:00:00 PM"
-  } else {
-    return date.toLocaleDateString(); // e.g. "7/5/2026"
-  }
+function formatTime(time:string): string {
+    console.log('time', time)
+    const timeArr = time.split(":")
+    const conversion = ((Number(timeArr[0]) + 11) % 12 + 1).toLocaleString()
+    console.log('time string', conversion)
+    return `${conversion}:${timeArr[1]}` + (Number(timeArr[0]) <= 12 ? ' AM' : ' PM')
 }
 
 
@@ -229,9 +222,7 @@ function openDeleteModal(itemId: string) {
 }
 </script>
 
-<dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={dateTimeModal} onclick={() => dateTimeModal.close()}>
 
-</dialog>
 
 <dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
     <div class="w-96 p-6">
@@ -249,26 +240,16 @@ function openDeleteModal(itemId: string) {
                 <textarea required bind:value={newTask.description} name="description" id="description" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
             <div class="flex flex-col gap-2">
-                <label class="font-semibold" for="date">Date</label>
                 <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" onclick={() => selectDateOption('today')} class:border-blue-500={dateOption === 'today'} class:bg-blue-300={dateOption === 'today'} class:text-blue-600={dateOption === 'today'} class:shadow-sm={dateOption === 'today'} class="flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors">
-                        <span>Today</span>
-                    </button>
-                    <button type="button" onclick={() => selectDateOption('tomorrow')} class:border-blue-500={dateOption === 'tomorrow'} class:bg-blue-300={dateOption === 'tomorrow'} class:text-blue-600={dateOption === 'tomorrow'} class:shadow-sm={dateOption === 'tomorrow'} class="flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors">
-                        <span>Tomorrow</span>
-                    </button>
-                    <button type="button" onclick={() => {
-                        dateOption = 'custom';
-                        const dateInput = document.getElementById('date');
-                        if (dateInput) {
-                            dateInput.showPicker();
-                        }
-                    }} class:border-blue-500={dateOption === 'custom'} class:bg-blue-300={dateOption === 'custom'} class:text-blue-600={dateOption === 'custom'} class:shadow-sm={dateOption === 'custom'} class="ml-auto flex cursor-pointer items-center justify-center rounded-full border border-gray-300 p-2 text-slate-600 transition-colors">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </button>
-                    <input bind:value={newTask.date} type="datetime-local" name="date" id="date" class="pointer-events-none absolute h-0 w-0 opacity-0" tabindex="-1">
+                    <div class="flex flex-col gap-3">
+                        <label for="date" class="font-semibold">Date</label>
+                           <input type="date" id="date" bind:value={newTask.date}>
+
+                    </div>
+                    <div class="flex flex-col gap-3">
+                    <label for="tiem" class="px-1">Time</label>
+                    <input type="time" bind:value={newTask.time} name="time" id="time">
+                    </div>
                 </div>
             </div>
             <div class="flex justify-end mt-3">
@@ -342,11 +323,18 @@ function openDeleteModal(itemId: string) {
                                 <span>
                                     {item.description}
                                 </span>
-                                {#if item.date}
-                                    <span class="mt-1 rounded-full pointer-events-none border border-gray-300 px-2 py-1 text-blue-600">
-                                        {formatDate(item.date)}
-                                    </span>
-                                {/if}
+                                <div class="flex items-center gap-2">
+                                    {#if item.date}
+                                        <span class="mt-1 rounded-full pointer-events-none border border-gray-300 px-2 py-1 text-blue-600">
+                                            {formatDate(item.date)}
+                                        </span>
+                                    {/if}
+                                    {#if item.time}
+                                          <span class="mt-1 rounded-full pointer-events-none border border-gray-300 px-2 py-1 text-blue-600">
+                                            {formatTime(item.time)}
+                                        </span>
+                                    {/if}
+                                </div>
                             </dd>
                         </dl>
                     </div>
