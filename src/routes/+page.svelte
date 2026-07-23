@@ -41,7 +41,9 @@ let completedItemsShowMap = $state(new Map < string, boolean > ())
 let swipeOffsets = $state(new Map<string, number>())
 let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
-let today = new Date().toDateString()
+let today = $state<Date>(new Date())
+
+setInterval(() => today = new Date(), 1000)
 
 
 let userInitials = $derived(() => {
@@ -91,6 +93,7 @@ let dateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "2-digit",
   year: "numeric",
 });
+
 
 function openAddNewTaskItemModal(taskId: string) {
     newTask.task_id = taskId
@@ -205,6 +208,12 @@ function formatDate(dateStr:string) :string {
     return dateFormatter.format(date)
 }
 
+function getItemDate(dateStr:string): Date {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date
+}
+
 function formatTime(time:string): string {
     console.log('time', time)
     const timeArr = time.split(":")
@@ -288,7 +297,7 @@ function openDeleteModal(itemId: string) {
 
 <div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
 <div class="relative flex w-full items-center justify-center p-2">
-    <span class="text-xl font-semibold text-slate-400">{today}</span>
+    <span class="text-xl font-semibold text-slate-400">{today.toLocaleString()}</span>
     <span class="absolute right-2 rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
 </div>
     {#each tasks.data as task, index (index) }
@@ -325,7 +334,7 @@ function openDeleteModal(itemId: string) {
                                 </span>
                                 <div class="flex items-center gap-2">
                                     {#if item.date}
-                                        <span class="mt-1 rounded-full pointer-events-none border border-gray-300 px-2 py-1 text-blue-600">
+                                        <span  class="mt-1 {today.getTime() > getItemDate(item.date).getTime() ? 'text-red-600' : today.getTime() == getItemDate(item.date).getTime() ? 'text-green-600' : 'text-blue-600'} rounded-full pointer-events-none border border-gray-300 px-2 py-1 ">
                                             {formatDate(item.date)}
                                         </span>
                                     {/if}
