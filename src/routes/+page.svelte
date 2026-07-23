@@ -49,7 +49,7 @@ setInterval(() => today = new Date(), 1000)
 let userInitials = $derived(() => {
     const userInfo = user
     if (userInfo.data) {
-        const name = userInfo.data.user.displayName
+        const name = userInfo.data.displayName
         const seperatedName = name?.split(' ')
         if (seperatedName) {
             const firstInitial = seperatedName[0][0]
@@ -168,7 +168,7 @@ async function addNewTask() {
                 date: newTask.date,
                 order: newTask.order,
                 completed: newTask.completed,
-                userId: user.data!.user.uid,
+                userId: user.data!.uid,
                 time: newTask.time
 
             });
@@ -182,7 +182,7 @@ async function addNewTask() {
                 time: '',
                 order: null,
                 completed: false,
-                userId: user.data!.user.uid
+                userId: user.data!.uid
             }
 
         } catch (error) {

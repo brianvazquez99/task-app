@@ -2,7 +2,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { taskItems, tasks, user, type TASK, type TASK_ITEM } from '$lib/state.svelte';
-	import { browserSessionPersistence, GoogleAuthProvider, setPersistence, signInWithPopup } from 'firebase/auth';
+	import { browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
 	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
@@ -36,16 +36,20 @@ let loggedIn = $state<boolean>(false)
 	async function logIn() {
 		const provider = new GoogleAuthProvider()
 
-		await setPersistence(auth, browserSessionPersistence).then(() => {
+		await setPersistence(auth, browserLocalPersistence).then(() => {
 
 			return signInWithPopup(auth, provider).then((result) => {
-				user!.data = result
+				user!.data = result.user
 				loggedIn = true})
 		});
 
 
-		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
-		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.user.uid), orderBy('order', 'asc'))
+	}
+
+	async function getData() {
+
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
 
 
 
@@ -80,10 +84,10 @@ let loggedIn = $state<boolean>(false)
 		}
 		//if todayTask does not exist, create
 		else {
-		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
-		tasks.data.push({id: '', Name: 'Today', show: true, color: '#ffffff', userId: user.data!.user.uid!})
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: 'Today', show: true, color: '#ffffff', userId: user.data!.uid!})
 		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: 'Today', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.user.uid!})
+			await addDoc(collection(db!, 'Tasks'), {Name: 'Today', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.uid!})
 			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
@@ -102,23 +106,28 @@ let loggedIn = $state<boolean>(false)
 
     onMount(async () => {
 
-		if (user.data == null) {
-			loggedIn = false
-			logIn()
+		onAuthStateChanged(auth, (result) => {
+			console.log(result)
+		if (result) {
+			user.data = result;
+			loggedIn = true;
+			getData()
+		} else {
+			user.data = null;
+			loggedIn = false;
 		}
-		else {
-			loggedIn = true
-		}
+});
+
 
     })
 
 	async function addTask(e:Event) {
 		e.preventDefault()
-		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.user.uid), orderBy('dateCreated', 'asc'))
-		tasks.data.push({id: '', Name: newTaskTitle, show: true, color: newTaskColor, userId: user.data!.user.uid!})
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: newTaskTitle, show: true, color: newTaskColor, userId: user.data!.uid!})
 		newListModal.close()
 		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp(), color: newTaskColor, userId: user.data!.user.uid!})
+			await addDoc(collection(db!, 'Tasks'), {Name: newTaskTitle, dateCreated: serverTimestamp(), color: newTaskColor, userId: user.data!.uid!})
 			const tasksSnapshot = await getDocs(taskQ)
 			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
 			tasks.data = loadedTasks
@@ -147,7 +156,7 @@ let loggedIn = $state<boolean>(false)
 				time: newTask.time,
                 order: tasks.data.filter(item => item.id ===  newTask.task_id).length,
                 completed: newTask.completed,
-				userId: user.data!.user.uid!
+				userId: user.data!.uid!
             });
 			taskItems.data[taskItems.data.length -1].id = docRef.id
             newTask = {
@@ -159,7 +168,7 @@ let loggedIn = $state<boolean>(false)
 				time: '',
                 order: null,
                 completed: false,
-				userId: user.data!.user.uid
+				userId: user.data!.uid
             }
 
         } catch (error) {
