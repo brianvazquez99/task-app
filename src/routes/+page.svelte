@@ -15,6 +15,14 @@ import {
 	doc,
 	updateDoc
 } from "firebase/firestore";
+// TODO: UNCOMMENT WHEN READY TO ADD EDRA
+// import { createEditor, Edra } from '$lib/edra/shadcn/index.js';
+// 	// Create editor instance
+// 	const editor = createEditor({
+// 		onUpdate: () => {
+// 			console.log(editor?.getHTML());
+// 		}
+// 	});
 
 let addTaskModal: HTMLDialogElement
 let deleteItemModal: HTMLDialogElement
