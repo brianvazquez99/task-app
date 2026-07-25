@@ -9,7 +9,7 @@
 	import { slide } from 'svelte/transition';
 	import Tooltip from '../Tooltip.svelte';
 	import strings from '../../../strings.js';
-	import { BubbleMenu, getEditor, useEditorState } from '$lib/edra/tiptap/index.js';
+	import { BubbleMenu, getEditor, useEditorState } from '$lib/components/edra/tiptap/index.js';
 
 	const editor = getEditor();
 

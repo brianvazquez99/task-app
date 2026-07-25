@@ -14,15 +14,43 @@ import {
 	deleteDoc,
 	doc,
 	updateDoc
-} from "firebase/firestore";
+} from "firebase/firestore"
 // TODO: UNCOMMENT WHEN READY TO ADD EDRA
-// import { createEditor, Edra } from '$lib/edra/shadcn/index.js';
-// 	// Create editor instance
-// 	const editor = createEditor({
-// 		onUpdate: () => {
-// 			console.log(editor?.getHTML());
-// 		}
-// 	});
+import { createEditor, Edra } from '$lib/components/edra/shadcn/index';
+import StarterKit from '@tiptap/starter-kit';
+	// Create editor instance
+	const editor = createEditor({
+		onUpdate: () => {
+			console.log(editor?.getHTML());
+		}
+	});
+
+
+StarterKit.configure({
+	orderedList: {
+		HTMLAttributes: {
+			class: 'list-decimal'
+		}
+	},
+	bulletList: {
+		HTMLAttributes: {
+			class: 'list-disc'
+		}
+	},
+	heading: {
+		levels: [1, 2, 3, 4]
+	},
+	link: {
+		openOnClick: false,
+		autolink: true,
+		linkOnPaste: true,
+		HTMLAttributes: {
+			target: '_blank',
+			rel: 'noopener noreferrer nofollow'
+		}
+	},
+	codeBlock: false
+})
 
 let addTaskModal: HTMLDialogElement
 let deleteItemModal: HTMLDialogElement
@@ -254,7 +282,14 @@ function openDeleteModal(itemId: string) {
             </div>
             <div class="flex flex-col">
                 <label class="font-semibold" for="description"> Description</label>
-                <textarea required bind:value={newTask.description} name="description" id="description" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                <div class="border rounded-lg p-2">
+
+                	<Edra {editor}>
+		<Edra.Toolbar class="border-b p-1 overflow-x-auto" />
+		<Edra.Content class="min-h-60 px-4 py-2" />
+	        </Edra>
+                </div>
+                <!-- <textarea required bind:value={newTask.description} name="description" id="description" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea> -->
             </div>
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2">

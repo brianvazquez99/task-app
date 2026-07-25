@@ -1,6 +1,5 @@
 <script lang="ts">
 	import TiptapContent from '../tiptap/components/TiptapContent.svelte';
-	import './editor.css';
 	import mermaid from 'mermaid';
 	import {
 		MathBlock,
