@@ -16,7 +16,7 @@
 	const editor = getEditor();
 
 	const transaction = useEditorTransaction(editor);
-	const commandsKeys = Object.keys(commands);
+	const commandsKeys = Object.keys(commands).filter(com => com == 'lists');
 
 	function useAI() {
 		void transaction.version;

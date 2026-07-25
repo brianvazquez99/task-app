@@ -6,6 +6,7 @@
 	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
+	import DOMPurify from 'dompurify'
 
 
 
@@ -63,7 +64,10 @@ let loggedIn = $state<boolean>(false)
 		tasks.data.forEach(task => task.show = true)
 		const todayTask = tasks.data.find(task => task.Name === 'Today')
 		const todayDate = new Date().toLocaleDateString()
-        const loadedTaskItems = taskItemsSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK_ITEM, 'id'>) }))
+        const loadedTaskItems = taskItemsSnapshot.docs.map(doc => {
+            const data = doc.data() as Omit<TASK_ITEM, 'id'>
+            return {id: doc.id, ...data, description: DOMPurify.sanitize(data.description)}
+        })
         taskItems.data = loadedTaskItems
 		if (todayTask) {
 

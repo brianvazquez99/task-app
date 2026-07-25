@@ -21,7 +21,7 @@ import StarterKit from '@tiptap/starter-kit';
 	// Create editor instance
 	const editor = createEditor({
 		onUpdate: () => {
-			console.log(editor?.getHTML());
+            newTask.description = editor?.getHTML() ?? ''
 		}
 	});
 
@@ -209,6 +209,7 @@ async function addNewTask() {
 
             });
             taskItems.data[taskItems.data.length -1].id = docRef.id
+            editor?.commands.clearContent()
             newTask = {
                 id: '',
                 task_id: '',
@@ -372,8 +373,8 @@ function openDeleteModal(itemId: string) {
                         <dl class="pr-10">
                             <dt class="font-semibold text-sm">{item.title}</dt>
                             <dd class="flex flex-col pb-2 text-xs text-gray-600">
-                                <span>
-                                    {item.description}
+                                <span >
+                                    {@html item.description}
                                 </span>
                                 <div class="flex items-center gap-2">
                                     {#if item.date}
@@ -417,7 +418,7 @@ function openDeleteModal(itemId: string) {
                                     <input onchange={() => markNotCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
                                     <dl class="">
                                         <dt class="font-semibold text-sm line-through">{item.title}</dt>
-                                        <dd class="text-gray-600 pb-2 text-xs">{item.description}</dd>
+                                        <dd class="text-gray-600 pb-2 text-xs">{@html item.description}</dd>
                                     </dl>
                                 </div>
                                 {/each}
