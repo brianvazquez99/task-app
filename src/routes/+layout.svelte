@@ -264,7 +264,7 @@ let loggedIn = $state<boolean>(false)
 </dialog>
 <div class="bg-gray-100 min-h-dvh w-full flex flex-col">
 
-	<div class="flex w-full h-full flex-1">
+	<div class="flex w-full h-full flex-1 flex-col md:flex-row md:items-start items-center">
 		<div class="w-50 flex flex-col gap-4 p-3">
 			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
 				<span class="text-xl flex text-center font-semibold">+</span>

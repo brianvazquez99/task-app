@@ -271,7 +271,7 @@ function openDeleteModal(itemId: string) {
 
 
 <dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
-    <div class="w-96 p-6">
+    <div class="w-1/2 p-6">
 
         <form method="post" onsubmit={(e) => {addNewTask(); e.preventDefault()}} onclick={(e) => e.stopPropagation()}>
             <div class="flex justify-end">
@@ -316,7 +316,7 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <dialog bind:this={deleteItemModal} class="m-auto rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/50">
-    <div class="w-80 p-6">
+    <div class="w-1/2 p-6">
         <div class="flex justify-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-red-500">
@@ -340,14 +340,14 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
-<div class="relative flex w-full items-center justify-center p-2">
+<div class="relative flex flex-wrap w-full items-center justify-center p-2">
     <span class="text-xl font-semibold text-slate-400">{today.toLocaleString()}</span>
     <span class="absolute right-2 rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
 </div>
     {#each tasks.data as task, index (index) }
     {#if task.show}
 
-    <div style={`background-color: ${task.color}`} class=" rounded-lg min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
+    <div style={`background-color: ${task.color}`} class=" rounded-lg w-1/2 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
         <div class="text-lg ml-4 mt-2">{task.Name}</div>
         <div class="flex flex-col gap-3 p-2">
             <button type="button" onclick={() => openAddNewTaskItemModal(task.id)} class="flex justify-start gap-4 items-center px-2 py-1 hover:cursor-pointer hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-full">
