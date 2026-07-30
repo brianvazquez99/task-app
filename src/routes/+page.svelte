@@ -271,7 +271,7 @@ function openDeleteModal(itemId: string) {
 
 
 <dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
-    <div class="w-1/2 p-6">
+    <div class="md:w-96 w-full p-6">
 
         <form method="post" onsubmit={(e) => {addNewTask(); e.preventDefault()}} onclick={(e) => e.stopPropagation()}>
             <div class="flex justify-end">
@@ -316,7 +316,7 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <dialog bind:this={deleteItemModal} class="m-auto rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/50">
-    <div class="w-1/2 p-6">
+    <div class="md:w-80 w-full p-6">
         <div class="flex justify-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-red-500">
@@ -413,7 +413,7 @@ function openDeleteModal(itemId: string) {
                             </div>
                             {#if completedItemsShowMap.get(task.id) == true}
                             <div class="flex flex-col max-h-48 overflow-y-auto">
-                                {#each completedTakItemsMap().get(task.id) ?? [] as item (item.order)}
+                                {#each completedTakItemsMap().get(task.id) ?? [] as item, index (index)}
                                 <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
                                     <input onchange={() => markNotCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
                                     <dl class="">
