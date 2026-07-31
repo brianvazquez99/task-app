@@ -270,7 +270,7 @@ function openDeleteModal(itemId: string) {
 
 
 
-<dialog class="bg-white rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
+<dialog class="rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
     <div class="md:w-96 w-full p-6">
 
         <form method="post" onsubmit={(e) => {addNewTask(); e.preventDefault()}} onclick={(e) => e.stopPropagation()}>
@@ -315,7 +315,7 @@ function openDeleteModal(itemId: string) {
 
 </dialog>
 
-<dialog bind:this={deleteItemModal} class="m-auto rounded-2xl border border-gray-200 bg-white p-0 shadow-2xl backdrop:bg-black/50">
+<dialog bind:this={deleteItemModal} class="m-auto rounded-2xl border border-gray-200  p-0 shadow-2xl backdrop:bg-black/50">
     <div class="md:w-80 w-full p-6">
         <div class="flex justify-center">
             <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
