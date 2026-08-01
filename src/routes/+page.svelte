@@ -279,7 +279,7 @@ function openDeleteModal(itemId: string) {
             </div>
             <div class="flex flex-col">
                 <label class="font-semibold" for="title"> Title</label>
-                <input required bind:value={newTask.title} type="text" name="title" id="title" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input required bind:value={newTask.title} type="text" name="title" id="title" class="border border-gray-300 text-black rounded-md py-2 px-3 focus:outline-none form-input  focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="flex flex-col">
                 <label class="font-semibold" for="description"> Description</label>
@@ -290,18 +290,17 @@ function openDeleteModal(itemId: string) {
 		<Edra.Content class="min-h-60 px-4 py-2" />
 	        </Edra>
                 </div>
-                <!-- <textarea required bind:value={newTask.description} name="description" id="description" class="border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea> -->
             </div>
             <div class="flex flex-col gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <div class="flex flex-col gap-3">
                         <label for="date" class="font-semibold">Date</label>
-                           <input type="date" id="date" bind:value={newTask.date}>
+                           <input class="form-input text-black" type="date" id="date" bind:value={newTask.date}>
 
                     </div>
                     <div class="flex flex-col gap-3">
                     <label for="tiem" class="px-1">Time</label>
-                    <input type="time" bind:value={newTask.time} name="time" id="time">
+                    <input class="form-input text-black" type="time" bind:value={newTask.time} name="time" id="time">
                     </div>
                 </div>
             </div>

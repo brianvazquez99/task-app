@@ -187,19 +187,19 @@ let loggedIn = $state<boolean>(false)
 	<div class="w-96 p-6">
 	<form method="post" onsubmit={(e) => {addNewTaskItem(); e.preventDefault();}}>
 		<div class="flex flex-col gap-2">
-			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class="bg-gray-200 rounded-lg border-none">
-			<textarea required bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class="bg-gray-200 rounded-lg border-none"></textarea>
+			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class=" form-input text-black rounded-lg border border-gray-300 rounded">
+			<textarea required bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class=" rounded-lg form-textarea text-black border border-gray-300 rounded"></textarea>
 			<div class="flex flex-col gap-1">
 				<label for="date">Date</label>
-				<input bind:value={newTask.date} type="date" name="date" id="date" class="bg-gray-200 rounded-lg border-none">
+				<input bind:value={newTask.date} type="date" name="date" id="date" class="form-input text-black rounded-lg border border-gray-300 rounded">
 			</div>
 			<div class="flex flex-col gap-1">
 				<label for="time">Time</label>
-				<input bind:value={newTask.time} type="time" name="time" id="time" class="bg-gray-200 rounded-lg border-none">
+				<input bind:value={newTask.time} type="time" name="time" id="time" class="form-input text-black rounded-lg border border-gray-300 rounded">
 			</div>
 			<div class="flex flex-col gap-1">
 				<label for="task">Task</label>
-				<select required bind:value={newTask.task_id} name="task" id="task" class="bg-gray-200 rounded-lg border-none">
+				<select required bind:value={newTask.task_id} name="task" id="task" class="form-select text-black rounded-lg border border-gray-300 rounded">
 					{#each tasks.data as task (task.id)}
 						<option value={task.id}>{task.Name}</option>
 					{/each}
@@ -230,7 +230,7 @@ let loggedIn = $state<boolean>(false)
 					id="listName"
 					bind:value={newTaskTitle}
 					placeholder="Enter list name..."
-					class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					class="px-3 py-2 text-black border border-slate-300 rounded-lg focus:outline-none form-input focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 			</div>
 			<div class="flex flex-col gap-2">
@@ -238,7 +238,7 @@ let loggedIn = $state<boolean>(false)
 				<input bind:value={newTaskColor}
 					type="color"
 					id="color"
-					class=" border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					class=" border border-slate-300 rounded-lg text-black form-input focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 				/>
 			</div>
 			<div class="flex gap-3 justify-end mt-4">
