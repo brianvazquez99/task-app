@@ -188,7 +188,7 @@ let loggedIn = $state<boolean>(false)
 	<form method="post" onsubmit={(e) => {addNewTaskItem(); e.preventDefault();}}>
 		<div class="flex flex-col gap-2">
 			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class=" form-input text-black rounded-lg border border-gray-300 rounded">
-			<textarea required bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class=" rounded-lg form-textarea text-black border border-gray-300 rounded"></textarea>
+			<textarea  bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class=" rounded-lg form-textarea text-black border border-gray-300 rounded"></textarea>
 			<div class="flex flex-col gap-1">
 				<label for="date">Date</label>
 				<input bind:value={newTask.date} type="date" name="date" id="date" class="form-input text-black rounded-lg border border-gray-300 rounded">

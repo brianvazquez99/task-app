@@ -248,6 +248,13 @@ function formatDate(dateStr:string) :string {
 function getItemDate(dateStr:string): Date {
     const [year, month, day] = dateStr.split("-").map(Number);
     const date = new Date(year, month - 1, day);
+    date.setHours(0,0,0,0)
+    return date
+}
+
+function todayWithZeroTime() : Date {
+    const date = new Date()
+    date.setHours(0,0,0,0)
     return date
 }
 
@@ -377,7 +384,7 @@ function openDeleteModal(itemId: string) {
                                 </span>
                                 <div class="flex items-center gap-2">
                                     {#if item.date}
-                                        <span  class="mt-1 {today.getTime() > getItemDate(item.date).getTime() ? 'text-red-600' : today.getTime() == getItemDate(item.date).getTime() ? 'text-green-600' : 'text-blue-600'} rounded-full pointer-events-none border border-gray-300 px-2 py-1 ">
+                                        <span  class="mt-1 {todayWithZeroTime().getTime() > getItemDate(item.date).getTime() ? 'text-red-600' : today.getTime() <= getItemDate(item.date).getTime() ? 'text-green-600' : 'text-blue-600'} rounded-full pointer-events-none border border-gray-300 px-2 py-1 ">
                                             {formatDate(item.date)}
                                         </span>
                                     {/if}
