@@ -18,6 +18,7 @@ import {
 // TODO: UNCOMMENT WHEN READY TO ADD EDRA
 import { createEditor, Edra } from '$lib/components/edra/shadcn/index';
 import StarterKit from '@tiptap/starter-kit';
+	import { SvelteDate, SvelteMap } from "svelte/reactivity";
 	// Create editor instance
 	const editor = createEditor({
 		onUpdate: () => {
@@ -79,6 +80,8 @@ let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
 let today = $state<Date>(new Date())
 
+let backgroundColor = $state<string>("#ffffff")
+
 setInterval(() => today = new Date(), 1000)
 
 
@@ -99,8 +102,7 @@ let userInitials = $derived(() => {
 
 let taskItemsMap = $derived(() => {
     const items = taskItems.data.filter(item => !item.completed)
-    const itemMap = new Map < string,
-        TASK_ITEM[] > ()
+    const itemMap = new SvelteMap< string,TASK_ITEM[] > ()
     items.forEach(item => {
         if (!itemMap.has(item.task_id)) {
             itemMap.set(item.task_id, [])
@@ -113,8 +115,7 @@ let taskItemsMap = $derived(() => {
 
 let completedTakItemsMap = $derived(() => {
     const items = taskItems.data.filter(item => item.completed)
-    const itemMap = new Map < string,
-        TASK_ITEM[] > ()
+    const itemMap = new SvelteMap< string,TASK_ITEM[] > ()
     items.forEach(item => {
         if (!itemMap.has(item.task_id)) {
             itemMap.set(item.task_id, [])
@@ -155,7 +156,7 @@ function openAddNewTaskItemModal(taskId: string) {
 
 function toggleCompletedShow(taskId: string) {
     completedItemsShowMap.set(taskId, !completedItemsShowMap.get(taskId))
-    completedItemsShowMap = new Map(completedItemsShowMap)
+    completedItemsShowMap = new SvelteMap(completedItemsShowMap)
 }
 
 function startSwipe(event: PointerEvent, itemId: string) {
@@ -168,14 +169,14 @@ function moveSwipe(event: PointerEvent, itemId: string) {
 
     const delta = event.clientX - swipeStartX
     const offset = Math.min(0, Math.max(-96, delta))
-    const nextOffsets = new Map(swipeOffsets)
+    const nextOffsets = new SvelteMap(swipeOffsets)
     nextOffsets.set(itemId, offset)
     swipeOffsets = nextOffsets
 }
 
 function endSwipe(itemId: string) {
     const offset = swipeOffsets.get(itemId) ?? 0
-    const nextOffsets = new Map(swipeOffsets)
+    const nextOffsets = new SvelteMap(swipeOffsets)
     nextOffsets.set(itemId, offset < -48 ? -96 : 0)
     swipeOffsets = nextOffsets
     swipeStartX = null
@@ -183,7 +184,7 @@ function endSwipe(itemId: string) {
 }
 
 function resetSwipe(itemId: string) {
-    const nextOffsets = new Map(swipeOffsets)
+    const nextOffsets = new SvelteMap(swipeOffsets)
     nextOffsets.set(itemId, 0)
     swipeOffsets = nextOffsets
 }
@@ -247,13 +248,13 @@ function formatDate(dateStr:string) :string {
 
 function getItemDate(dateStr:string): Date {
     const [year, month, day] = dateStr.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
+    const date = new SvelteDate(year, month - 1, day);
     date.setHours(0,0,0,0)
     return date
 }
 
 function todayWithZeroTime() : Date {
-    const date = new Date()
+    const date = new SvelteDate()
     date.setHours(0,0,0,0)
     return date
 }
@@ -345,10 +346,15 @@ function openDeleteModal(itemId: string) {
     </div>
 </dialog>
 
-<div class="p-4 flex flex-col gap-8 flex-1 items-center mx-auto container ">
+<div class="p-4 h-full flex flex-col gap-8 flex-1 items-center mx-auto container ">
 <div class="relative flex flex-wrap w-full items-center justify-center p-2">
     <span class="text-xl font-semibold text-slate-400">{today.toLocaleString()}</span>
-    <span class="absolute right-2 rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
+    <div class="absolute right-2 ">
+        <button class="rounded-lg bg-sky-500/60 font-semibold hover:cursor-pointer px-2 py-1">
+            Change Background
+        </button>
+        <span class="rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
+    </div>
 </div>
     {#each tasks.data as task, index (index) }
     {#if task.show}

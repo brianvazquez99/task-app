@@ -305,7 +305,7 @@ let loggedIn = $state<boolean>(false)
 				</button>
 			</div>
 		</div>
-		<div class="flex-1  justify-center w-full flex ">
+		<div class="flex-1 min-h-0 justify-center w-full flex ">
 		{#if loggedIn}
 			{#if loading}
 			<div class="flex flex-col p-4 gap-8 mt-15">
