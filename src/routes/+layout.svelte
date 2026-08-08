@@ -33,6 +33,27 @@
 
 
 let loggedIn = $state<boolean>(false)
+let today = $state<Date>(new Date())
+
+setInterval(() => today = new Date(), 1000)
+
+
+let backgroundColor = $state<string>("#ffffff")
+
+let userInitials = $derived(() => {
+    const userInfo = user
+    if (userInfo.data) {
+        const name = userInfo.data.displayName
+        const seperatedName = name?.split(' ')
+        if (seperatedName) {
+            const firstInitial = seperatedName[0][0]
+            const lastInitial = seperatedName[1][0]
+            return `${firstInitial}${lastInitial}`
+        }
+        return ''
+    }
+    return ''
+})
 
 	async function logIn() {
 		const provider = new GoogleAuthProvider()
@@ -262,8 +283,17 @@ let loggedIn = $state<boolean>(false)
 		</form>
 	</div>
 </dialog>
-<div class="bg-gray-100 min-h-dvh w-full flex flex-col">
-
+<div style={`background-color:${backgroundColor}`} class=" min-h-dvh w-full flex flex-col">
+<div class="relative flex flex-wrap w-full items-center justify-center p-2 bg-white">
+    <span class="text-xl flex-1 text-center ms-0 lg:ms-70 font-semibold text-slate-400">{today.toLocaleString()}</span>
+    <div class="text-end ">
+        <button class="rounded-lg bg-white border border-gray-300 font-semibold hover:cursor-pointer px-2 py-1">
+            Background
+            <input bind:value={backgroundColor} type="color" name="bg" id="bg">
+        </button>
+        <span class="rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
+    </div>
+</div>
 	<div class="flex w-full h-full flex-1 flex-col md:flex-row md:items-start items-center">
 		<div class="w-50 flex flex-col gap-4 p-3">
 			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">

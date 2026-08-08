@@ -80,25 +80,10 @@ let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
 let today = $state<Date>(new Date())
 
-let backgroundColor = $state<string>("#ffffff")
-
-setInterval(() => today = new Date(), 1000)
 
 
-let userInitials = $derived(() => {
-    const userInfo = user
-    if (userInfo.data) {
-        const name = userInfo.data.displayName
-        const seperatedName = name?.split(' ')
-        if (seperatedName) {
-            const firstInitial = seperatedName[0][0]
-            const lastInitial = seperatedName[1][0]
-            return `${firstInitial}${lastInitial}`
-        }
-        return ''
-    }
-    return ''
-})
+
+
 
 let taskItemsMap = $derived(() => {
     const items = taskItems.data.filter(item => !item.completed)
@@ -347,19 +332,11 @@ function openDeleteModal(itemId: string) {
 </dialog>
 
 <div class="p-4 h-full flex flex-col gap-8 flex-1 items-center mx-auto container ">
-<div class="relative flex flex-wrap w-full items-center justify-center p-2">
-    <span class="text-xl font-semibold text-slate-400">{today.toLocaleString()}</span>
-    <div class="absolute right-2 ">
-        <button class="rounded-lg bg-sky-500/60 font-semibold hover:cursor-pointer px-2 py-1">
-            Change Background
-        </button>
-        <span class="rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
-    </div>
-</div>
+
     {#each tasks.data as task, index (index) }
     {#if task.show}
 
-    <div style={`background-color: ${task.color}`} class=" rounded-lg w-1/2 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
+    <div style={`background-color: ${task.color}`} class=" rounded-lg w-full mx-4 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
         <div class="text-lg ml-4 mt-2">{task.Name}</div>
         <div class="flex flex-col gap-3 p-2">
             <button type="button" onclick={() => openAddNewTaskItemModal(task.id)} class="flex justify-start gap-4 items-center px-2 py-1 hover:cursor-pointer hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-full">
