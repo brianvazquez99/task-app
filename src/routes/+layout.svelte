@@ -321,7 +321,7 @@ let userInitials = $derived(() => {
 					<input bind:checked={task.show} type="checkbox" name="task-{task.id}" id="task-{task.id}" class="form-checkbox checked:bg-gray-500">
 					<label class="text-sm" for="task-{task.id}">{task.Name}</label>
 					<div class="text-end flex-1 me-3 text-gray-600 text-sm">
-						{taskItems.data.filter(item => item.task_id === task.id).length}
+						{taskItems.data.filter(item => item.task_id === task.id && !item.completed).length}
 					</div>
 				</div>
 				{/each}
