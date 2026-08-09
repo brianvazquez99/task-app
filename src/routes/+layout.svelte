@@ -38,7 +38,7 @@ let today = $state<Date>(new Date())
 setInterval(() => today = new Date(), 1000)
 
 
-let backgroundColor = $state<string>("#ffffff")
+let backgroundColor = $state<string>("#f3f4f6")
 
 let userInitials = $derived(() => {
     const userInfo = user
@@ -283,7 +283,7 @@ let userInitials = $derived(() => {
 		</form>
 	</div>
 </dialog>
-<div style={`background-color:${backgroundColor}`} class=" min-h-dvh w-full flex flex-col">
+<div style={`background-color:${backgroundColor}`} class="  min-h-dvh w-full flex flex-col">
 <div class="relative flex flex-wrap w-full items-center justify-center p-2 bg-white">
     <span class="text-xl flex-1 text-center ms-0 lg:ms-70 font-semibold text-slate-400">{today.toLocaleString()}</span>
     <div class="text-end ">
