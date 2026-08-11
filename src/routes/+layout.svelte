@@ -1,7 +1,7 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import { auth, db } from '$lib/firebase/firebase.app';
-	import { taskItems, tasks, user, type TASK, type TASK_ITEM } from '$lib/state.svelte';
+	import { taskItems, tasks, user, type TASK, type TASK_ITEM, type USER_SETTING } from '$lib/state.svelte';
 	import { browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
 	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
@@ -40,6 +40,13 @@ setInterval(() => today = new Date(), 1000)
 
 let backgroundColor = $state<string>("#f3f4f6")
 
+	//TODO: FINISH IMPLEMENTATION OF SAVING BACKGROUND
+// $effect (() => {
+// 	const color = backgroundColor
+
+// 	if (color) {}
+// })
+
 let userInitials = $derived(() => {
     const userInfo = user
     if (userInfo.data) {
@@ -72,12 +79,14 @@ let userInitials = $derived(() => {
 
 		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
 		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
+		const userQ = query(collection(db!, 'User Settings'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
 
 
 
-		const [tasksSnapshot, taskItemsSnapshot] = await Promise.all([
+		const [tasksSnapshot, taskItemsSnapshot, userSnapshot] = await Promise.all([
 				getDocs(taskQ),
 				getDocs(taskItemsQ),
+				getDocs(userQ),
 		])
 
         const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
@@ -89,6 +98,10 @@ let userInitials = $derived(() => {
             const data = doc.data() as Omit<TASK_ITEM, 'id'>
             return {id: doc.id, ...data, description: DOMPurify.sanitize(data.description)}
         })
+		const userSettings = userSnapshot.docs.map(doc => ({id:doc.id,...(doc.data() as Omit<USER_SETTING, 'id'>) }))
+		if (userSettings?.[0]?.background) {
+			backgroundColor = userSettings[0].background
+		}
         taskItems.data = loadedTaskItems
 		if (todayTask) {
 

@@ -8,6 +8,10 @@ export type TASK = {
     userId:string
 }
 
+export type USER_SETTING = {
+    background:string
+}
+
 export type TASK_ITEM = {
     id:string,
     task_id:string
