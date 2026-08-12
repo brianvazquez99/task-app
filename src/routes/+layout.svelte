@@ -40,12 +40,7 @@ setInterval(() => today = new Date(), 1000)
 
 let backgroundColor = $state<string>("#f3f4f6")
 
-	//TODO: FINISH IMPLEMENTATION OF SAVING BACKGROUND
-// $effect (() => {
-// 	const color = backgroundColor
 
-// 	if (color) {}
-// })
 
 let userInitials = $derived(() => {
     const userInfo = user
@@ -79,7 +74,7 @@ let userInitials = $derived(() => {
 
 		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
 		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
-		const userQ = query(collection(db!, 'User Settings'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
+		const userQ = query(collection(db!, 'User Settings'), where('userId', '==', user.data?.uid))
 
 
 
@@ -99,8 +94,10 @@ let userInitials = $derived(() => {
             return {id: doc.id, ...data, description: DOMPurify.sanitize(data.description)}
         })
 		const userSettings = userSnapshot.docs.map(doc => ({id:doc.id,...(doc.data() as Omit<USER_SETTING, 'id'>) }))
-		if (userSettings?.[0]?.background) {
-			backgroundColor = userSettings[0].background
+
+		console.log('userSettings',userSnapshot)
+		if (userSettings?.[0]?.backgroundColor) {
+			backgroundColor = userSettings[0].backgroundColor
 		}
         taskItems.data = loadedTaskItems
 		if (todayTask) {
@@ -213,6 +210,20 @@ let userInitials = $derived(() => {
             console.error(error);
         }
     }
+
+}
+ function saveColor() {
+	if (db) {
+		try {
+			 addDoc(collection(db, "User Settings"), {
+				backgroundColor: backgroundColor,
+				userId: user.data?.uid
+			})
+
+		} catch (error) {
+			console.error(error)
+		}
+	}
 }
 </script>
 
@@ -302,7 +313,7 @@ let userInitials = $derived(() => {
     <div class="text-end ">
         <button class="rounded-lg bg-white border border-gray-300 font-semibold hover:cursor-pointer px-2 py-1">
             Background
-            <input bind:value={backgroundColor} type="color" name="bg" id="bg">
+            <input onchange={() => saveColor()} bind:value={backgroundColor} type="color" name="bg" id="bg">
         </button>
         <span class="rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
     </div>

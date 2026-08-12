@@ -9,7 +9,9 @@ export type TASK = {
 }
 
 export type USER_SETTING = {
-    background:string
+    id:string
+    backgroundColor:string
+    userId:string
 }
 
 export type TASK_ITEM = {
