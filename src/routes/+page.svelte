@@ -70,9 +70,6 @@ let newTask = $state <TASK_ITEM > ({
 
 let isDateOpen = $state<boolean>(false)
 
-    $effect(() => {
-        console.log('date open', isDateOpen)
-    })
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
 let swipeOffsets = $state(new Map<string, number>())
@@ -94,7 +91,6 @@ let taskItemsMap = $derived(() => {
         }
         itemMap.get(item.task_id) !.push(item)
     })
-    console.log(itemMap)
     return itemMap
 })
 
@@ -177,7 +173,6 @@ function resetSwipe(itemId: string) {
 
 async function addNewTask() {
     if (db) {
-        console.log(newTask)
         addTaskModal.close()
         taskItems.data.push({
             ...newTask
@@ -245,10 +240,8 @@ function todayWithZeroTime() : Date {
 }
 
 function formatTime(time:string): string {
-    console.log('time', time)
     const timeArr = time.split(":")
     const conversion = ((Number(timeArr[0]) + 11) % 12 + 1).toLocaleString()
-    console.log('time string', conversion)
     return `${conversion}:${timeArr[1]}` + (Number(timeArr[0]) <= 12 ? ' AM' : ' PM')
 }
 

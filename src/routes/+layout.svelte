@@ -3,7 +3,7 @@
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { taskItems, tasks, user, type TASK, type TASK_ITEM, type USER_SETTING } from '$lib/state.svelte';
 	import { browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
-	import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
+	import { addDoc, collection, doc, DocumentReference, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
 	import DOMPurify from 'dompurify'
@@ -39,6 +39,7 @@ setInterval(() => today = new Date(), 1000)
 
 
 let backgroundColor = $state<string>("#f3f4f6")
+let backgroundColorRef : DocumentReference
 
 
 
@@ -95,9 +96,9 @@ let userInitials = $derived(() => {
         })
 		const userSettings = userSnapshot.docs.map(doc => ({id:doc.id,...(doc.data() as Omit<USER_SETTING, 'id'>) }))
 
-		console.log('userSettings',userSnapshot)
 		if (userSettings?.[0]?.backgroundColor) {
 			backgroundColor = userSettings[0].backgroundColor
+			backgroundColorRef = userSnapshot.docs[0].ref
 		}
         taskItems.data = loadedTaskItems
 		if (todayTask) {
@@ -105,8 +106,6 @@ let userInitials = $derived(() => {
 			taskItems.data.forEach(item => {
 				   const [year, month, day] = item.date.split("-").map(Number);
     				const itemsDate = new Date(year, month - 1, day).toLocaleDateString();
-					console.log('item date', itemsDate)
-					console.log('todays date', todayDate)
 				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
 					const itemsTask = tasks.data.find(task => task.id === item.task_id)
 					const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
@@ -142,7 +141,6 @@ let userInitials = $derived(() => {
     onMount(async () => {
 
 		onAuthStateChanged(auth, (result) => {
-			console.log(result)
 		if (result) {
 			user.data = result;
 			loggedIn = true;
@@ -212,16 +210,32 @@ let userInitials = $derived(() => {
     }
 
 }
+
+//TODO: INSTEAD OF ADDING NEW DOC, DO AN UPDATE IF EXISTS, ELSE CREATE
  function saveColor() {
 	if (db) {
-		try {
-			 addDoc(collection(db, "User Settings"), {
-				backgroundColor: backgroundColor,
+		//if background color ref already exists in db then update, else add
+		if(backgroundColorRef) {
+			try {
+				updateDoc(backgroundColorRef, {
+					backgroundColor: backgroundColor,
 				userId: user.data?.uid
-			})
+				})
+			} catch (error) {
+				console.error(error)
+			}
+		}
+		else {
+			try {
+				 addDoc(collection(db, "User Settings"), {
+					backgroundColor: backgroundColor,
+					userId: user.data?.uid
+				})
 
-		} catch (error) {
-			console.error(error)
+			} catch (error) {
+				console.error(error)
+			}
+
 		}
 	}
 }
