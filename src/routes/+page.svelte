@@ -120,6 +120,11 @@ function openAddNewTaskItemModal(taskId: string) {
     addTaskModal.showModal()
 
 }
+function openEditTaskItemModal(taskItem: TASK_ITEM) {
+    newTask = {...taskItem}
+    addTaskModal.showModal()
+
+}
 
  function markCompleted(itemId: string) {
     const docRef = doc(db!, "Task Items", itemId)
@@ -343,7 +348,7 @@ function openDeleteModal(itemId: string) {
                         Delete
                     </button>
                     <div
-                        class="relative z-10 flex items-start gap-3 bg-white px-1 pt-2 transition-transform duration-200 hover:bg-gray-200"
+                        class="relative z-10 border-b flex items-start justify-between gap-3 bg-white px-1 pt-2 transition-transform duration-200 hover:bg-gray-200"
                         style={`transform: translateX(${swipeOffsets.get(item.id) ?? 0}px);`}
                         onpointerdown={(event) => startSwipe(event, item.id)}
                         onpointermove={(event) => moveSwipe(event, item.id)}
@@ -351,6 +356,8 @@ function openDeleteModal(itemId: string) {
                         onpointerleave={() => endSwipe(item.id)}
                         onpointercancel={() => endSwipe(item.id)}
                     >
+                    <div class="flex items-start gap-3">
+
                         <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
                         <dl class="pr-10">
                             <dt class="font-semibold text-sm">{item.title}</dt>
@@ -372,6 +379,10 @@ function openDeleteModal(itemId: string) {
                                 </div>
                             </dd>
                         </dl>
+                    </div>
+                    <button class="rounded-full px-2 py-1 border border-gray-300" onclick={() => openEditTaskItemModal(item)}>
+                        <svg width="25px" height="25px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M9.65661 17L6.99975 17L6.99975 14M6.10235 14.8974L17.4107 3.58902C18.1918 2.80797 19.4581 2.80797 20.2392 3.58902C21.0202 4.37007 21.0202 5.6364 20.2392 6.41745L8.764 17.8926C8.22794 18.4287 7.95992 18.6967 7.6632 18.9271C7.39965 19.1318 7.11947 19.3142 6.8256 19.4723C6.49475 19.6503 6.14115 19.7868 5.43395 20.0599L3 20.9998L3.78312 18.6501C4.05039 17.8483 4.18403 17.4473 4.3699 17.0729C4.53497 16.7404 4.73054 16.424 4.95409 16.1276C5.20582 15.7939 5.50466 15.4951 6.10235 14.8974Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                    </button>
                     </div>
                 </div>
                 {:else}
