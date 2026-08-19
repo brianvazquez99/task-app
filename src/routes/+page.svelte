@@ -18,7 +18,8 @@ import {
 // TODO: UNCOMMENT WHEN READY TO ADD EDRA
 import { createEditor, Edra } from '$lib/components/edra/shadcn/index';
 import StarterKit from '@tiptap/starter-kit';
-	import { SvelteDate, SvelteMap } from "svelte/reactivity";
+import { SvelteDate, SvelteMap } from "svelte/reactivity";
+
 	// Create editor instance
 	const editor = createEditor({
 		onUpdate: () => {
@@ -68,7 +69,6 @@ let newTask = $state <TASK_ITEM > ({
     userId: ''
 })
 
-let isDateOpen = $state<boolean>(false)
 
 
 let completedItemsShowMap = $state(new Map < string, boolean > ())
@@ -76,6 +76,8 @@ let swipeOffsets = $state(new Map<string, number>())
 let swipeStartX = $state<number | null>(null)
 let activeSwipeId = $state<string | null>(null)
 let today = $state<Date>(new Date())
+
+let isEditing = $state<boolean>(false)
 
 
 
@@ -121,8 +123,31 @@ function openAddNewTaskItemModal(taskId: string) {
 
 }
 function openEditTaskItemModal(taskItem: TASK_ITEM) {
+    // TODO: Find out why descirption is not populating in editor
     newTask = {...taskItem}
+    editor?.commands.setContent(newTask.description)
+    isEditing = true
     addTaskModal.showModal()
+
+}
+
+function closeModal() {
+    if (isEditing) {
+        isEditing = false
+    }
+                newTask = {
+                id: '',
+                task_id: '',
+                title: '',
+                description: '',
+                date: '',
+                time: '',
+                order: null,
+                completed: false,
+                userId: user.data!.uid
+            }
+            editor?.commands.clearContent()
+
 
 }
 
@@ -179,37 +204,75 @@ function resetSwipe(itemId: string) {
 async function addNewTask() {
     if (db) {
         addTaskModal.close()
-        taskItems.data.push({
-            ...newTask
-        });
-        try {
-            const docRef = await addDoc(collection(db, "Task Items"), {
-                task_id: newTask.task_id,
-                title: newTask.title,
-                description: newTask.description,
-                date: newTask.date,
-                order: newTask.order,
-                completed: newTask.completed,
-                userId: user.data!.uid,
-                time: newTask.time
+        if (isEditing) {
+            //UPDATE
+            const docRef = doc(db, "Task Items", newTask.id);
 
-            });
-            taskItems.data[taskItems.data.length -1].id = docRef.id
-            editor?.commands.clearContent()
-            newTask = {
-                id: '',
-                task_id: '',
-                title: '',
-                description: '',
-                date: '',
-                time: '',
-                order: null,
-                completed: false,
-                userId: user.data!.uid
+            try {
+                await updateDoc(docRef, {
+                    task_id: newTask.task_id,
+                    title: newTask.title,
+                    description: newTask.description,
+                    date: newTask.date,
+                    order: newTask.order,
+                    completed: newTask.completed,
+                    userId: user.data!.uid,
+                    time: newTask.time
+                })
+                let originalItemIndex = taskItems.data.findIndex(item => item.id === newTask.id)
+                taskItems.data.splice(originalItemIndex, 1, $state.snapshot(newTask))
+                editor?.commands.clearContent()
+                newTask = {
+                    id: '',
+                    task_id: '',
+                    title: '',
+                    description: '',
+                    date: '',
+                    time: '',
+                    order: null,
+                    completed: false,
+                    userId: user.data!.uid
+                }
+            } catch (error) {
+                console.error(error)
             }
 
-        } catch (error) {
-            console.error(error);
+            isEditing = false
+        }
+        else {
+            taskItems.data.push({
+                ...newTask
+            });
+            try {
+                const docRef = await addDoc(collection(db, "Task Items"), {
+                    task_id: newTask.task_id,
+                    title: newTask.title,
+                    description: newTask.description,
+                    date: newTask.date,
+                    order: newTask.order,
+                    completed: newTask.completed,
+                    userId: user.data!.uid,
+                    time: newTask.time
+
+                });
+                taskItems.data[taskItems.data.length -1].id = docRef.id
+                editor?.commands.clearContent()
+                newTask = {
+                    id: '',
+                    task_id: '',
+                    title: '',
+                    description: '',
+                    date: '',
+                    time: '',
+                    order: null,
+                    completed: false,
+                    userId: user.data!.uid
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
+
         }
     }
 }
@@ -261,7 +324,7 @@ function openDeleteModal(itemId: string) {
 
 
 
-<dialog class="rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => addTaskModal.close()}>
+<dialog class="rounded-lg shadow-2xl p-4 m-auto backdrop:bg-black/50" bind:this={addTaskModal} onclick={() => closeModal()}>
     <div class="md:w-96 w-full p-6">
 
         <form method="post" onsubmit={(e) => {addNewTask(); e.preventDefault()}} onclick={(e) => e.stopPropagation()}>
@@ -279,7 +342,7 @@ function openDeleteModal(itemId: string) {
                 	<Edra {editor}>
 		<Edra.Toolbar class="border-b p-1 overflow-x-auto" />
 		<Edra.Content class="min-h-60 px-4 py-2" />
-	        </Edra>
+	    </Edra>
                 </div>
             </div>
             <div class="flex flex-col gap-2">
@@ -380,7 +443,7 @@ function openDeleteModal(itemId: string) {
                             </dd>
                         </dl>
                     </div>
-                    <button class="rounded-full px-2 py-1 border border-gray-300" onclick={() => openEditTaskItemModal(item)}>
+                    <button class="hover:cursor-pointer rounded-full px-2 py-1 border border-gray-300" onclick={() => openEditTaskItemModal(item)}>
                         <svg width="25px" height="25px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M9.65661 17L6.99975 17L6.99975 14M6.10235 14.8974L17.4107 3.58902C18.1918 2.80797 19.4581 2.80797 20.2392 3.58902C21.0202 4.37007 21.0202 5.6364 20.2392 6.41745L8.764 17.8926C8.22794 18.4287 7.95992 18.6967 7.6632 18.9271C7.39965 19.1318 7.11947 19.3142 6.8256 19.4723C6.49475 19.6503 6.14115 19.7868 5.43395 20.0599L3 20.9998L3.78312 18.6501C4.05039 17.8483 4.18403 17.4473 4.3699 17.0729C4.53497 16.7404 4.73054 16.424 4.95409 16.1276C5.20582 15.7939 5.50466 15.4951 6.10235 14.8974Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                     </button>
                     </div>
