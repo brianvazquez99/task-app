@@ -323,7 +323,7 @@ let userInitials = $derived(() => {
 </dialog>
 <div style={`background-color:${backgroundColor}`} class="  min-h-dvh w-full flex flex-col">
 <div class="relative flex flex-wrap w-full items-center justify-center p-2 bg-white">
-    <span class="text-xl flex-1 text-center ms-0 lg:ms-70 font-semibold text-slate-400">{today.toLocaleString()}</span>
+	<span class="text-xl flex-1 text-center ms-0 lg:ms-70 font-semibold text-slate-400">{today.toLocaleString().replace(',', ' ')}</span>
     <div class="text-end ">
         <button class="rounded-lg bg-white border border-gray-300 font-semibold hover:cursor-pointer px-2 py-1">
             Background
