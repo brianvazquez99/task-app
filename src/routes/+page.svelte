@@ -294,6 +294,12 @@ function formatDate(dateStr:string) :string {
     return dateFormatter.format(date)
 }
 
+function getDateName(dateStr:string):string {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', { weekday: 'short' })
+}
+
 function getItemDate(dateStr:string): Date {
     const [year, month, day] = dateStr.split("-").map(Number);
     const date = new SvelteDate(year, month - 1, day);
@@ -431,7 +437,7 @@ function openDeleteModal(itemId: string) {
                                 <div class="flex items-center gap-2">
                                     {#if item.date}
                                         <span  class="mt-1 {todayWithZeroTime().getTime() > getItemDate(item.date).getTime() ? 'text-red-600' : today.getTime() <= getItemDate(item.date).getTime() ? 'text-green-600' : 'text-blue-600'} rounded-full pointer-events-none border border-gray-300 px-2 py-1 ">
-                                            {formatDate(item.date)}
+                                            {getDateName(item.date) + ', ' +formatDate(item.date)}
                                         </span>
                                     {/if}
                                     {#if item.time}
