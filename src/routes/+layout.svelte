@@ -71,6 +71,30 @@ let userInitials = $derived(() => {
 
 	}
 
+	function checkInThisWeek(dateToCheck:string) {
+		const today = new Date()
+		const todayDate = today.getDate()
+		const todayDay = today.getDay()
+
+		const firstDayOfWeek = new Date(todayDate - todayDay)
+
+		const lastDayOfWeek = new Date(firstDayOfWeek.getDay() + 6)
+
+		const checkDate = new Date(dateToCheck)
+
+		return firstDayOfWeek >= checkDate && checkDate >= lastDayOfWeek
+
+	}
+
+	function checkInThisMonth(dateToCheck:string) {
+		const todayMonth = new Date().getMonth()
+
+		const dateCheckMonth = new Date().getMonth()
+
+		return todayMonth === dateCheckMonth
+
+	}
+
 	async function getData() {
 
 		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
@@ -105,8 +129,11 @@ let userInitials = $derived(() => {
 
 			taskItems.data.forEach(item => {
 				   const [year, month, day] = item.date.split("-").map(Number);
+
     				const itemsDate = new Date(year, month - 1, day).toLocaleDateString();
+
 				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
+
 					const itemsTask = tasks.data.find(task => task.id === item.task_id)
 					const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
 					item.task_id = todayTask.id
