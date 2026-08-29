@@ -71,28 +71,98 @@ let userInitials = $derived(() => {
 
 	}
 
-	function checkInThisWeek(dateToCheck:string) {
+	function checkInThisWeek(dateToCheck:string):boolean {
 		const today = new Date()
 		const todayDate = today.getDate()
 		const todayDay = today.getDay()
 
-		const firstDayOfWeek = new Date(todayDate - todayDay)
+		const firstDayOfWeek = new Date()
 
-		const lastDayOfWeek = new Date(firstDayOfWeek.getDay() + 6)
+		firstDayOfWeek.setDate(todayDate - todayDay)
+
+		const lastDayOfWeek = new Date()
+
+		lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6)
 
 		const checkDate = new Date(dateToCheck)
 
-		return firstDayOfWeek >= checkDate && checkDate >= lastDayOfWeek
+		console.log('first', firstDayOfWeek)
+		console.log('last', lastDayOfWeek)
+		console.log('date', checkDate)
+		console.log('today', todayDate, todayDay)
+
+		return firstDayOfWeek <= checkDate && checkDate <= lastDayOfWeek
 
 	}
 
-	function checkInThisMonth(dateToCheck:string) {
+	function checkInThisMonth(dateToCheck:string):boolean {
 		const todayMonth = new Date().getMonth()
 
-		const dateCheckMonth = new Date().getMonth()
+		const dateCheckMonth = new Date(dateToCheck).getMonth()
 
 		return todayMonth === dateCheckMonth
 
+	}
+
+	function checkIfToday(dateToCheck:string):boolean {
+
+		const [year, month, day] = dateToCheck.split("-").map(Number);
+
+		const itemsDate = new Date(year, month - 1, day).toLocaleDateString();
+
+		const todayDate = new Date().toLocaleDateString()
+
+		return itemsDate === todayDate
+
+	}
+		async function createThisMonthTask() {
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: 'This Month', show: true, color: '#ffffff', userId: user.data!.uid!})
+		try {
+			await addDoc(collection(db!, 'Tasks'), {Name: 'This Month', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.uid!})
+			const tasksSnapshot = await getDocs(taskQ)
+			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+			tasks.data = loadedTasks
+			tasks.data.forEach(task => task.show = true)
+			newTaskTitle = ''
+			newTaskColor = '#ffffff'
+
+		} catch (error) {
+			console.error(error);
+		}
+	}
+		async function createThisWeekTask() {
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: 'This Week', show: true, color: '#ffffff', userId: user.data!.uid!})
+		try {
+			await addDoc(collection(db!, 'Tasks'), {Name: 'This Week', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.uid!})
+			const tasksSnapshot = await getDocs(taskQ)
+			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+			tasks.data = loadedTasks
+			tasks.data.forEach(task => task.show = true)
+			newTaskTitle = ''
+			newTaskColor = '#ffffff'
+
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+		async function createTodayTask() {
+		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
+		tasks.data.push({id: '', Name: 'Today', show: true, color: '#ffffff', userId: user.data!.uid!})
+		try {
+			await addDoc(collection(db!, 'Tasks'), {Name: 'Today', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.uid!})
+			const tasksSnapshot = await getDocs(taskQ)
+			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
+			tasks.data = loadedTasks
+			tasks.data.forEach(task => task.show = true)
+			newTaskTitle = ''
+			newTaskColor = '#ffffff'
+
+		} catch (error) {
+			console.error(error);
+		}
 	}
 
 	async function getData() {
@@ -112,8 +182,15 @@ let userInitials = $derived(() => {
         const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
         tasks.data = loadedTasks
 		tasks.data.forEach(task => task.show = true)
+
 		const todayTask = tasks.data.find(task => task.Name === 'Today')
+
+		const thisMonthTask = tasks.data.find(task => task.Name === 'This Month')
+
+		const thisWeekTask = tasks.data.find(task => task.Name === 'This Week')
+
 		const todayDate = new Date().toLocaleDateString()
+
         const loadedTaskItems = taskItemsSnapshot.docs.map(doc => {
             const data = doc.data() as Omit<TASK_ITEM, 'id'>
             return {id: doc.id, ...data, description: DOMPurify.sanitize(data.description)}
@@ -124,42 +201,68 @@ let userInitials = $derived(() => {
 			backgroundColor = userSettings[0].backgroundColor
 			backgroundColorRef = userSnapshot.docs[0].ref
 		}
+
         taskItems.data = loadedTaskItems
-		if (todayTask) {
 
-			taskItems.data.forEach(item => {
-				   const [year, month, day] = item.date.split("-").map(Number);
+		const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
+		const thisWeekItemCount = taskItems.data.filter(i => i.task_id === thisWeekTask?.id).length
+		const thisMonthItemCount = taskItems.data.filter(i => i.task_id === thisMonthTask?.id).length
 
-    				const itemsDate = new Date(year, month - 1, day).toLocaleDateString();
+		taskItems.data.filter(item => !item.completed).forEach(item => {
+			const itemsTask = tasks.data.find(task => task.id === item.task_id)
+			if(item.date == null) return
 
-				if (itemsDate === todayDate && item.task_id !== todayTask?.id) {
+			const inThisWeek = checkInThisWeek(item.date)
+			const inThisMonth = checkInThisMonth(item.date)
+			const isToday = checkIfToday(item.date)
 
-					const itemsTask = tasks.data.find(task => task.id === item.task_id)
-					const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
+			console.log('today', isToday)
+			console.log('week', inThisWeek)
+			console.log('month', inThisMonth)
+			if (todayTask) {
+
+
+				if (isToday && item.task_id !== todayTask?.id) {
+
 					item.task_id = todayTask.id
 					item.title = item.title + `(${itemsTask?.Name})`
 					const itemDocRef = doc(db!, 'Task Items', item.id)
 					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title , order: todayTaskItemsCount})
 				}
-			})
-		}
-		//if todayTask does not exist, create
-		else {
-		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
-		tasks.data.push({id: '', Name: 'Today', show: true, color: '#ffffff', userId: user.data!.uid!})
-		try {
-			await addDoc(collection(db!, 'Tasks'), {Name: 'Today', dateCreated: serverTimestamp(), color: '#ffffff' , userId: user.data!.uid!})
-			const tasksSnapshot = await getDocs(taskQ)
-			const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
-			tasks.data = loadedTasks
-			tasks.data.forEach(task => task.show = true)
-			newTaskTitle = ''
-			newTaskColor = '#ffffff'
+			}
+			if(thisWeekTask) {
 
-		} catch (error) {
-			console.error(error);
+				if (inThisWeek && !isToday && itemsTask?.id !== thisWeekTask.id) {
+
+					item.task_id = thisWeekTask.id
+					item.title = item.title + `(${itemsTask?.Name})`
+					const itemDocRef = doc(db!, 'Task Items', item.id)
+					updateDoc(itemDocRef, {task_id: thisWeekTask.id, title: item.title , order: thisWeekItemCount})
+				}
+			}
+			if(thisMonthTask) {
+
+				if (inThisMonth && !isToday && !inThisWeek && itemsTask?.id !== thisMonthTask.id) {
+
+					item.task_id = thisMonthTask.id
+					item.title = item.title + `(${itemsTask?.Name})`
+					const itemDocRef = doc(db!, 'Task Items', item.id)
+					updateDoc(itemDocRef, {task_id: thisMonthTask.id, title: item.title , order: thisMonthItemCount})
+				}
+			}
+			})
+		//if todayTask does not exist, create
+		if(todayTask == null) {
+		await createTodayTask()
 		}
+		if (thisWeekTask == null) {
+			await createThisWeekTask()
 		}
+		if (thisMonthTask == null) {
+			await createThisMonthTask()
+		}
+
+
         loading = false
 	}
 
@@ -180,6 +283,8 @@ let userInitials = $derived(() => {
 
 
     })
+
+
 
 	async function addTask(e:Event) {
 		e.preventDefault()
