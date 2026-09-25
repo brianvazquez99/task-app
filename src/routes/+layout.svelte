@@ -28,9 +28,9 @@
 				Tasks
 			</a>
 			<a
-				href={resolve('/routine')}
-				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:px-4 ${page.url.pathname === '/routine' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}
-				aria-current={page.url.pathname === '/routine' ? 'page' : undefined}
+				href={resolve('/routines')}
+				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:px-4 ${page.url.pathname === '/routines' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}
+				aria-current={page.url.pathname === '/routines' ? 'page' : undefined}
 			>
 				<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 9.75A7.5 7.5 0 0 1 17.25 5.1L19.5 7.5m0-4.5v4.5H15m4.5 6.75A7.5 7.5 0 0 1 6.75 18.9L4.5 16.5m0 4.5v-4.5H9" />
