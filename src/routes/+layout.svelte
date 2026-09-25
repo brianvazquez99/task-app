@@ -3,7 +3,7 @@
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { taskItems, tasks, user, type TASK, type TASK_ITEM, type USER_SETTING } from '$lib/state.svelte';
 	import { browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
-	import { addDoc, collection, doc, DocumentReference, getDocs, orderBy, query, serverTimestamp, updateDoc, where, } from 'firebase/firestore';
+import { addDoc, collection, doc, DocumentReference, getDocs, orderBy, query, serverTimestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import './layout.css';
 	import DOMPurify from 'dompurify'
@@ -166,101 +166,87 @@ let userInitials = $derived(() => {
 	}
 
 	async function getData() {
+		const uid = user.data?.uid
+		if (!uid || !db) return
 
-		const taskQ = query(collection(db!, 'Tasks'),  where('userId', '==', user.data?.uid), orderBy('dateCreated', 'asc'))
-		const taskItemsQ = query(collection(db!, 'Task Items'), where('userId', '==', user.data?.uid), orderBy('order', 'asc'))
-		const userQ = query(collection(db!, 'User Settings'), where('userId', '==', user.data?.uid))
-
-
-
+		const taskQ = query(collection(db, 'Tasks'), where('userId', '==', uid), orderBy('dateCreated', 'asc'))
+		const taskItemsQ = query(collection(db, 'Task Items'), where('userId', '==', uid), orderBy('order', 'asc'))
+		const userQ = query(collection(db, 'User Settings'), where('userId', '==', uid))
 		const [tasksSnapshot, taskItemsSnapshot, userSnapshot] = await Promise.all([
-				getDocs(taskQ),
-				getDocs(taskItemsQ),
-				getDocs(userQ),
+			getDocs(taskQ),
+			getDocs(taskItemsQ),
+			getDocs(userQ)
 		])
 
-        const loadedTasks = tasksSnapshot.docs.map(doc => ({id:doc.id, ...(doc.data() as Omit<TASK, 'id'>) }))
-        tasks.data = loadedTasks
-		tasks.data.forEach(task => task.show = true)
+		tasks.data = tasksSnapshot.docs.map(snapshot => ({
+			id: snapshot.id,
+			...(snapshot.data() as Omit<TASK, 'id'>),
+			show: true
+		}))
+		taskItems.data = taskItemsSnapshot.docs.map(snapshot => {
+			const data = snapshot.data() as Omit<TASK_ITEM, 'id'>
+			return { id: snapshot.id, ...data, description: DOMPurify.sanitize(data.description ?? '') }
+		})
 
-		const todayTask = tasks.data.find(task => task.Name === 'Today')
-
-		const thisMonthTask = tasks.data.find(task => task.Name === 'This Month')
-
-		const thisWeekTask = tasks.data.find(task => task.Name === 'This Week')
-
-		const todayDate = new Date().toLocaleDateString()
-
-        const loadedTaskItems = taskItemsSnapshot.docs.map(doc => {
-            const data = doc.data() as Omit<TASK_ITEM, 'id'>
-            return {id: doc.id, ...data, description: DOMPurify.sanitize(data.description)}
-        })
-		const userSettings = userSnapshot.docs.map(doc => ({id:doc.id,...(doc.data() as Omit<USER_SETTING, 'id'>) }))
-
-		if (userSettings?.[0]?.backgroundColor) {
-			backgroundColor = userSettings[0].backgroundColor
-			backgroundColorRef = userSnapshot.docs[0].ref
+		const userSetting = userSnapshot.docs[0]
+		const settingData = userSetting?.data() as Omit<USER_SETTING, 'id'> | undefined
+		if (settingData?.backgroundColor) {
+			backgroundColor = settingData.backgroundColor
+			backgroundColorRef = userSetting.ref
 		}
 
-        taskItems.data = loadedTaskItems
-
-		const todayTaskItemsCount = taskItems.data.filter(i => i.task_id === todayTask?.id).length
-		const thisWeekItemCount = taskItems.data.filter(i => i.task_id === thisWeekTask?.id).length
-		const thisMonthItemCount = taskItems.data.filter(i => i.task_id === thisMonthTask?.id).length
-
-		taskItems.data.filter(item => !item.completed).forEach(item => {
-			const itemsTask = tasks.data.find(task => task.id === item.task_id)
-			if(item.date == null) return
-
-			const inThisWeek = checkInThisWeek(item.date)
-			const inThisMonth = checkInThisMonth(item.date)
-			const isToday = checkIfToday(item.date)
-
-			console.log('today', isToday)
-			console.log('week', inThisWeek)
-			console.log('month', inThisMonth)
-			if (todayTask) {
-
-
-				if (isToday && item.task_id !== todayTask?.id) {
-
-					item.task_id = todayTask.id
-					item.title = item.title + `(${itemsTask?.Name})`
-					const itemDocRef = doc(db!, 'Task Items', item.id)
-					updateDoc(itemDocRef, {task_id: todayTask.id, title: item.title , order: todayTaskItemsCount})
-				}
+		// Create missing system lists in one write and keep the generated IDs locally.
+		const systemListNames = ['Today', 'This Week', 'This Month'] as const
+		const missingSystemLists = systemListNames.filter(name => !tasks.data.some(task => task.Name === name))
+		if (missingSystemLists.length) {
+			const batch = writeBatch(db)
+			for (const name of missingSystemLists) {
+				const taskRef = doc(collection(db, 'Tasks'))
+				batch.set(taskRef, { Name: name, dateCreated: serverTimestamp(), color: '#ffffff', userId: uid })
+				tasks.data.push({ id: taskRef.id, Name: name, show: true, color: '#ffffff', userId: uid })
 			}
-			if(thisWeekTask) {
-
-				if (inThisWeek && !isToday && itemsTask?.id !== thisWeekTask.id) {
-
-					item.task_id = thisWeekTask.id
-					item.title = item.title + `(${itemsTask?.Name})`
-					const itemDocRef = doc(db!, 'Task Items', item.id)
-					updateDoc(itemDocRef, {task_id: thisWeekTask.id, title: item.title , order: thisWeekItemCount})
-				}
-			}
-			if(thisMonthTask) {
-
-				if (inThisMonth && !isToday && !inThisWeek && itemsTask?.id !== thisMonthTask.id) {
-
-					item.task_id = thisMonthTask.id
-					item.title = item.title + `(${itemsTask?.Name})`
-					const itemDocRef = doc(db!, 'Task Items', item.id)
-					updateDoc(itemDocRef, {task_id: thisMonthTask.id, title: item.title , order: thisMonthItemCount})
-				}
-			}
-			})
-		//if todayTask does not exist, create
-		if(todayTask == null) {
-		await createTodayTask()
+			await batch.commit()
 		}
-		if (thisWeekTask == null) {
-			await createThisWeekTask()
+
+		const taskById = new Map(tasks.data.map(task => [task.id, task]))
+		const systemTasks = new Map<string, TASK>(
+			tasks.data
+				.filter(task => systemListNames.includes(task.Name as typeof systemListNames[number]))
+				.map(task => [task.Name, task] as [string, TASK])
+		)
+		const todayTask = systemTasks.get('Today')
+		const thisWeekTask = systemTasks.get('This Week')
+		const thisMonthTask = systemTasks.get('This Month')
+		const itemCounts = new Map<string, number>()
+		for (const item of taskItems.data) itemCounts.set(item.task_id, (itemCounts.get(item.task_id) ?? 0) + 1)
+		const nextOrder = new Map<string, number>()
+		for (const systemTask of [todayTask, thisWeekTask, thisMonthTask]) {
+			if (systemTask) nextOrder.set(systemTask.id, itemCounts.get(systemTask.id) ?? 0)
 		}
-		if (thisMonthTask == null) {
-			await createThisMonthTask()
+
+		const now = new Date()
+		const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+		const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+		const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6)
+		const updates: Promise<void>[] = []
+		for (const item of taskItems.data) {
+			if (item.completed || !item.date) continue
+			const [year, month, day] = item.date.split('-').map(Number)
+			const itemDate = new Date(year, month - 1, day)
+			const isToday = item.date === todayKey
+			const inThisWeek = itemDate >= weekStart && itemDate <= weekEnd
+			const inThisMonth = year === now.getFullYear() && month - 1 === now.getMonth()
+			const targetTask = isToday ? todayTask : inThisWeek ? thisWeekTask : inThisMonth ? thisMonthTask : undefined
+			if (!targetTask || item.task_id === targetTask.id) continue
+
+			const sourceTaskName = taskById.get(item.task_id)?.Name
+			item.task_id = targetTask.id
+			if (sourceTaskName) item.title = `${item.title} (${sourceTaskName})`
+			const order = nextOrder.get(targetTask.id) ?? 0
+			nextOrder.set(targetTask.id, order + 1)
+			updates.push(updateDoc(doc(db, 'Task Items', item.id), { task_id: targetTask.id, title: item.title, order }))
 		}
+		await Promise.all(updates)
 
 
         loading = false
