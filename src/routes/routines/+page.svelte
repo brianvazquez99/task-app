@@ -49,6 +49,8 @@
 	let editedCategoryName = $state('');
 	let selectedDays = $state<string[]>(['Monday', 'Wednesday', 'Friday']);
 	let selectedDay = $state<string | null>(weekDays[(new Date().getDay() + 6) % 7].name);
+	let collapsedDetailCategories = $state<string[]>([]);
+	let collapsedDrawerCategories = $state<string[]>([]);
 	let activeView = $state<'week' | 'month'>('week');
 	let monthYear = $state(new Date().getFullYear());
 	let monthIndex = $state(new Date().getMonth());
@@ -151,6 +153,22 @@
 		const day = weekDays.find((item) => item.name === dayName);
 		const date = dateForDay(day?.index ?? 0);
 		return isCompleteOnDate(routine, date);
+	}
+
+	function routinesForCategory(dayName: string, categoryName: string) {
+		return routinesForDay(dayName).filter((routine) => routine.category === categoryName);
+	}
+
+	function toggleDetailCategory(categoryName: string) {
+		collapsedDetailCategories = collapsedDetailCategories.includes(categoryName)
+			? collapsedDetailCategories.filter((name) => name !== categoryName)
+			: [...collapsedDetailCategories, categoryName];
+	}
+
+	function toggleDrawerCategory(categoryName: string) {
+		collapsedDrawerCategories = collapsedDrawerCategories.includes(categoryName)
+			? collapsedDrawerCategories.filter((name) => name !== categoryName)
+			: [...collapsedDrawerCategories, categoryName];
 	}
 
 	function toggleDay(dayName: string) {
@@ -697,22 +715,43 @@
 					</div>
 					<span class="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600">{routinesForDay(selectedDay!).length} {routinesForDay(selectedDay!).length === 1 ? 'routine' : 'routines'}</span>
 				</div>
-				<div class="flex flex-col gap-2">
-					{#each routinesForDay(selectedDay!) as routine (routine.id)}
-						<div class={`group rounded-xl border p-3 transition ${isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
-							<div class="flex items-start gap-3">
-								<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, selectedDay!)} onclick={() => toggleComplete(routine, selectedDay!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isComplete(routine, selectedDay) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
-									<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
-								</button>
-								<div class="min-w-0 flex-1">
-									<p class={`text-sm font-semibold ${isComplete(routine, selectedDay!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
-									<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+				<div class="flex flex-col gap-3">
+					{#each categories as routineCategory (routineCategory.id)}
+						{@const categoryRoutines = routinesForCategory(selectedDay!, routineCategory.name)}
+						<section class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+							<button
+								type="button"
+								onclick={() => toggleDetailCategory(routineCategory.name)}
+								aria-expanded={!collapsedDetailCategories.includes(routineCategory.name)}
+								class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-blue-50/60"
+							>
+								<span class="min-w-0 truncate font-bold text-slate-800">{routineCategory.name}</span>
+								<span class="flex items-center gap-2">
+									<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">{categoryRoutines.length}</span>
+									<svg aria-hidden="true" class={`h-4 w-4 text-slate-400 transition-transform ${collapsedDetailCategories.includes(routineCategory.name) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
+								</span>
+							</button>
+							{#if !collapsedDetailCategories.includes(routineCategory.name)}
+								<div class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3">
+									{#each categoryRoutines as routine (routine.id)}
+										<div class={`group rounded-xl border p-3 transition ${isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
+											<div class="flex items-start gap-3">
+												<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, selectedDay!)} onclick={() => toggleComplete(routine, selectedDay!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isComplete(routine, selectedDay!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
+													<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
+												</button>
+												<div class="min-w-0 flex-1">
+													<p class={`text-sm font-semibold ${isComplete(routine, selectedDay!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
+													<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+												</div>
+												<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
+											</div>
+										</div>
+									{:else}
+										<p class="py-4 text-center text-sm text-slate-400">No routines in this category</p>
+									{/each}
 								</div>
-								<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
-							</div>
-						</div>
-					{:else}
-						<p class="py-10 text-center text-sm text-slate-400">No routines planned for this day</p>
+							{/if}
+						</section>
 					{/each}
 				</div>
 			</section>
@@ -778,22 +817,43 @@
 							</div>
 							<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 						</div>
-						<div class="flex flex-col gap-2">
-							{#each routinesForDate(selectedCalendarDate!) as routine (routine.id)}
-								<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
-									<div class="flex items-start gap-3">
-										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isCompleteOnDate(routine, selectedCalendarDate!)} onclick={() => toggleCompleteOnDate(routine, selectedCalendarDate!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isCompleteOnDate(routine, selectedCalendarDate) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
-											<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
-										</button>
-										<div class="min-w-0 flex-1">
-											<p class={`text-sm font-semibold ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
-											<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+						<div class="flex flex-col gap-3">
+							{#each categories as routineCategory (routineCategory.id)}
+								{@const categoryRoutines = routinesForDate(selectedCalendarDate!).filter((routine) => routine.category === routineCategory.name)}
+								<section class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+									<button
+										type="button"
+										onclick={() => toggleDrawerCategory(routineCategory.name)}
+										aria-expanded={!collapsedDrawerCategories.includes(routineCategory.name)}
+										class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-blue-50/60"
+									>
+										<span class="min-w-0 truncate font-bold text-slate-800">{routineCategory.name}</span>
+										<span class="flex items-center gap-2">
+											<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">{categoryRoutines.length}</span>
+											<svg aria-hidden="true" class={`h-4 w-4 text-slate-400 transition-transform ${collapsedDrawerCategories.includes(routineCategory.name) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
+										</span>
+									</button>
+									{#if !collapsedDrawerCategories.includes(routineCategory.name)}
+										<div class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3">
+											{#each categoryRoutines as routine (routine.id)}
+												<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
+													<div class="flex items-start gap-3">
+														<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isCompleteOnDate(routine, selectedCalendarDate!)} onclick={() => toggleCompleteOnDate(routine, selectedCalendarDate!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
+															<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
+														</button>
+														<div class="min-w-0 flex-1">
+															<p class={`text-sm font-semibold ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
+															<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+														</div>
+														<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
+													</div>
+												</div>
+											{:else}
+												<p class="py-4 text-center text-sm text-slate-400">No routines in this category</p>
+											{/each}
 										</div>
-										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
-									</div>
-								</div>
-							{:else}
-								<p class="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400">No routines planned for this day</p>
+									{/if}
+								</section>
 							{/each}
 						</div>
 					</aside>
