@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import '../layout.css' 
 
+	type RecurrenceMode = 'weekdays' | 'monthDates';
 	type RoutineCategory = {
 		id: string;
 		name: string;
@@ -16,6 +17,8 @@
 		title: string;
 		category: string;
 		duration?: number;
+		recurrence: RecurrenceMode;
+		monthDates: number[];
 		days: string[];
 		completedKeys: string[];
 		userId: string;
@@ -44,6 +47,8 @@
 	let title = $state('');
 	let category = $state('Morning');
 	let duration = $state<number | ''>('');
+	let recurrenceMode = $state<RecurrenceMode>('weekdays');
+	let selectedMonthDates = $state<number[]>([]);
 	let newCategoryName = $state('');
 	let editingCategoryId = $state<string | null>(null);
 	let editedCategoryName = $state('');
@@ -102,9 +107,16 @@
 		);
 	}
 
+	function routineRepeatsOnDate(routine: Routine, date: Date) {
+		return routine.recurrence === 'monthDates'
+			? routine.monthDates.includes(date.getDate())
+			: routine.days.includes(dayNameForDate(date));
+	}
+
 	function routinesForDate(date: Date) {
-		const dayName = dayNameForDate(date);
-		return routinesForDay(dayName);
+		return routines
+			.filter((routine) => routineRepeatsOnDate(routine, date))
+			.sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
 	}
 
 	function monthLabel() {
@@ -144,9 +156,8 @@
 	}
 
 	function routinesForDay(dayName: string) {
-		return routines
-			.filter((routine) => routine.days.includes(dayName))
-			.sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
+		const day = weekDays.find((item) => item.name === dayName);
+		return routinesForDate(dateForDay(day?.index ?? 0));
 	}
 
 	function isComplete(routine: Routine, dayName: string) {
@@ -184,6 +195,12 @@
 			: [...new Set([...selectedDays, ...days])];
 	}
 
+	function toggleMonthDate(date: number) {
+		selectedMonthDates = selectedMonthDates.includes(date)
+			? selectedMonthDates.filter((item) => item !== date)
+			: [...selectedMonthDates, date].sort((a, b) => a - b);
+	}
+
 	async function loadRoutines(userId: string) {
 		if (!db) return;
 		const snapshot = await getDocs(query(collection(db, 'Routines'), where('userId', '==', userId)));
@@ -194,6 +211,8 @@
 				title: String(data.title ?? ''),
 				category: String(data.category ?? 'Morning'),
 				duration: typeof data.duration === 'number' && data.duration > 0 ? data.duration : undefined,
+				recurrence: data.recurrence === 'monthDates' ? 'monthDates' : 'weekdays',
+				monthDates: Array.isArray(data.monthDates) ? data.monthDates.filter((date): date is number => typeof date === 'number') : [],
 				days: Array.isArray(data.days) ? data.days : [],
 				completedKeys: Array.isArray(data.completedKeys) ? data.completedKeys : [],
 				userId: String(data.userId ?? userId)
@@ -395,11 +414,18 @@
 
 	async function addRoutine(event: SubmitEvent) {
 		event.preventDefault();
-		if (!db || !currentUser || !title.trim() || selectedDays.length === 0) return;
+		if (
+			!db ||
+			!currentUser ||
+			!title.trim() ||
+			(recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)
+		) return;
 
 		const previousTitle = title;
 		const previousCategory = category;
 		const previousDuration = duration;
+		const previousRecurrenceMode = recurrenceMode;
+		const previousMonthDates = [...selectedMonthDates];
 		const previousSelectedDays = [...selectedDays];
 		const routineRef = doc(collection(db, 'Routines'));
 		const routine: Routine = {
@@ -407,7 +433,9 @@
 			title: title.trim(),
 			category,
 			...(duration !== '' ? { duration } : {}),
-			days: [...selectedDays],
+			recurrence: recurrenceMode,
+			monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
+			days: recurrenceMode === 'weekdays' ? [...selectedDays] : [],
 			completedKeys: [],
 			userId: currentUser.uid
 		};
@@ -418,6 +446,8 @@
 		title = '';
 		category = categories[0]?.name ?? 'Morning';
 		duration = '';
+		recurrenceMode = 'weekdays';
+		selectedMonthDates = [];
 		selectedDays = ['Monday', 'Wednesday', 'Friday'];
 		showForm = false;
 
@@ -426,6 +456,8 @@
 				title: routine.title,
 				category: routine.category,
 				...(routine.duration !== undefined ? { duration: routine.duration } : {}),
+				recurrence: routine.recurrence,
+				monthDates: routine.monthDates,
 				days: routine.days,
 				completedKeys: routine.completedKeys,
 				userId: routine.userId,
@@ -437,6 +469,8 @@
 			title = previousTitle;
 			category = previousCategory;
 			duration = previousDuration;
+			recurrenceMode = previousRecurrenceMode;
+			selectedMonthDates = previousMonthDates;
 			selectedDays = previousSelectedDays;
 			showForm = true;
 			errorMessage = 'Unable to save this routine. Your change was reverted.';
@@ -628,33 +662,33 @@
 					</label>
 				</div>
 				<div class="mt-5">
-					<div class="mb-2 flex flex-wrap items-center gap-2">
-						<span class="mr-1 text-sm font-semibold text-slate-700">Repeat on</span>
-						<button
-							type="button"
-							onclick={() => toggleDayGroup(weekdays)}
-							aria-pressed={weekdays.every((day) => selectedDays.includes(day))}
-							class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekdays.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}
-						>
-							Weekdays
-						</button>
-						<button
-							type="button"
-							onclick={() => toggleDayGroup(weekends)}
-							aria-pressed={weekends.every((day) => selectedDays.includes(day))}
-							class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekends.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}
-						>
-							Weekends
-						</button>
+					<span class="mb-2 block text-sm font-semibold text-slate-700">Repeat pattern</span>
+					<div class="mb-4 flex w-fit rounded-xl border border-slate-200 bg-slate-50 p-1">
+						<button type="button" onclick={() => (recurrenceMode = 'weekdays')} aria-pressed={recurrenceMode === 'weekdays'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'weekdays' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>Days of the week</button>
+						<button type="button" onclick={() => (recurrenceMode = 'monthDates')} aria-pressed={recurrenceMode === 'monthDates'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'monthDates' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>Specific dates</button>
 					</div>
-					<div class="flex flex-wrap gap-2">
-						{#each weekDays as day (day.name)}
-							<button type="button" onclick={() => toggleDay(day.name)} class={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedDays.includes(day.name) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`} aria-pressed={selectedDays.includes(day.name)}>{day.short}</button>
-						{/each}
-					</div>
+					{#if recurrenceMode === 'weekdays'}
+						<div class="mb-2 flex flex-wrap items-center gap-2">
+							<span class="mr-1 text-sm font-semibold text-slate-700">Repeat on</span>
+							<button type="button" onclick={() => toggleDayGroup(weekdays)} aria-pressed={weekdays.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekdays.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}>Weekdays</button>
+							<button type="button" onclick={() => toggleDayGroup(weekends)} aria-pressed={weekends.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekends.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}>Weekends</button>
+						</div>
+						<div class="flex flex-wrap gap-2">
+							{#each weekDays as day (day.name)}
+								<button type="button" onclick={() => toggleDay(day.name)} class={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedDays.includes(day.name) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`} aria-pressed={selectedDays.includes(day.name)}>{day.short}</button>
+							{/each}
+						</div>
+					{:else}
+						<p class="mb-3 text-sm text-slate-500">Choose one or more dates that repeat every month.</p>
+						<div class="grid max-w-xl grid-cols-7 gap-2">
+							{#each Array.from({ length: 31 }, (_, index) => index + 1) as date (date)}
+								<button type="button" onclick={() => toggleMonthDate(date)} aria-pressed={selectedMonthDates.includes(date)} class={`rounded-lg border px-2 py-2 text-sm font-semibold transition ${selectedMonthDates.includes(date) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`}>{date}</button>
+							{/each}
+						</div>
+					{/if}
 				</div>
 				<div class="mt-5 flex justify-end">
-					<button disabled={saving || selectedDays.length === 0} type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : 'Save routine'}</button>
+					<button disabled={saving || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : 'Save routine'}</button>
 				</div>
 			</form>
 		{/if}
