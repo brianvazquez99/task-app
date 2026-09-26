@@ -21,6 +21,8 @@
 	};
 
 	const defaultCategoryNames = ['Morning', 'After work', 'Night'];
+	const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+	const weekends = ['Saturday', 'Sunday'];
 	const weekDays = [
 		{ name: 'Monday', short: 'Mon', index: 0 },
 		{ name: 'Tuesday', short: 'Tue', index: 1 },
@@ -95,6 +97,13 @@
 		selectedDays = selectedDays.includes(dayName)
 			? selectedDays.filter((day) => day !== dayName)
 			: [...selectedDays, dayName];
+	}
+
+	function toggleDayGroup(days: string[]) {
+		const groupIsSelected = days.every((day) => selectedDays.includes(day));
+		selectedDays = groupIsSelected
+			? selectedDays.filter((day) => !days.includes(day))
+			: [...new Set([...selectedDays, ...days])];
 	}
 
 	async function loadRoutines(userId: string) {
@@ -534,7 +543,25 @@
 					</label>
 				</div>
 				<div class="mt-5">
-					<span class="mb-2 block text-sm font-semibold text-slate-700">Repeat on</span>
+					<div class="mb-2 flex flex-wrap items-center gap-2">
+						<span class="mr-1 text-sm font-semibold text-slate-700">Repeat on</span>
+						<button
+							type="button"
+							onclick={() => toggleDayGroup(weekdays)}
+							aria-pressed={weekdays.every((day) => selectedDays.includes(day))}
+							class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekdays.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}
+						>
+							Weekdays
+						</button>
+						<button
+							type="button"
+							onclick={() => toggleDayGroup(weekends)}
+							aria-pressed={weekends.every((day) => selectedDays.includes(day))}
+							class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekends.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}
+						>
+							Weekends
+						</button>
+					</div>
 					<div class="flex flex-wrap gap-2">
 						{#each weekDays as day (day.name)}
 							<button type="button" onclick={() => toggleDay(day.name)} class={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedDays.includes(day.name) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`} aria-pressed={selectedDays.includes(day.name)}>{day.short}</button>
