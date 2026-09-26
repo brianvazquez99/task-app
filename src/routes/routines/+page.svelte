@@ -3,6 +3,7 @@
 	import { onAuthStateChanged, type User } from 'firebase/auth';
 	import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 	import { onMount } from 'svelte';
+	import '../layout.css' 
 
 	type RoutineCategory = {
 		id: string;
@@ -505,7 +506,7 @@
 	<meta name="description" content="Plan recurring routines across your week." />
 </svelte:head>
 
-<main class="min-h-[calc(100dvh-65px)] bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+<main class="min-h-dvh bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
 	<div class="mx-auto max-w-7xl">
 		<div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
 			<div>
