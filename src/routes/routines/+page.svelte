@@ -51,6 +51,7 @@
 	let activeView = $state<'week' | 'month'>('week');
 	let monthYear = $state(new Date().getFullYear());
 	let monthIndex = $state(new Date().getMonth());
+	let selectedCalendarDate = $state<Date | null>(null);
 	let showForm = $state(false);
 	let showCategoryManager = $state(false);
 	let errorMessage = $state('');
@@ -67,14 +68,7 @@
 		return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + dayIndex);
 	}
 
-	function dateKeyForDay(dayIndex: number) {
-		return dateForDay(dayIndex).toISOString().slice(0, 10);
-	}
 
-	function completionKey(dayName: string) {
-		const day = weekDays.find((item) => item.name === dayName);
-		return `${dateKeyForDay(day?.index ?? 0)}:${dayName}`;
-	}
 
 	function formattedDate(dayIndex: number) {
 		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(
@@ -90,12 +84,19 @@
 		return weekDays[(date.getDay() + 6) % 7].name;
 	}
 
-	function completionKeyForDate(date: Date, dayName = dayNameForDate(date)) {
-		return `${dateKey(date)}:${dayName}`;
+	function completionKeyForDate(date: Date) {
+		return dateKey(date);
+	}
+
+	function legacyCompletionKeyForDate(date: Date) {
+		return `${dateKey(date)}:${dayNameForDate(date)}`;
 	}
 
 	function isCompleteOnDate(routine: Routine, date: Date) {
-		return routine.completedKeys.includes(completionKeyForDate(date));
+		return (
+			routine.completedKeys.includes(completionKeyForDate(date)) ||
+			routine.completedKeys.includes(legacyCompletionKeyForDate(date))
+		);
 	}
 
 	function routinesForDate(date: Date) {
@@ -107,6 +108,15 @@
 		return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
 			new Date(monthYear, monthIndex, 1)
 		);
+	}
+
+	function fullDateLabel(date: Date) {
+		return new Intl.DateTimeFormat('en-US', {
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(date);
 	}
 
 	function monthCells() {
@@ -137,7 +147,9 @@
 	}
 
 	function isComplete(routine: Routine, dayName: string) {
-		return routine.completedKeys.includes(completionKey(dayName));
+		const day = weekDays.find((item) => item.name === dayName);
+		const date = dateForDay(day?.index ?? 0);
+		return isCompleteOnDate(routine, date);
 	}
 
 	function toggleDay(dayName: string) {
@@ -414,13 +426,15 @@
 		}
 	}
 
-	async function toggleComplete(routine: Routine, dayName: string) {
+	async function toggleCompleteOnDate(routine: Routine, date: Date) {
 		if (!db || pendingRoutineIds.includes(routine.id)) return;
 		const previousCompletedKeys = [...routine.completedKeys];
-		const key = completionKey(dayName);
-		const completedKeys = previousCompletedKeys.includes(key)
-			? previousCompletedKeys.filter((item) => item !== key)
-			: [...previousCompletedKeys, key];
+		const key = completionKeyForDate(date);
+		const legacyKey = legacyCompletionKeyForDate(date);
+		const isCurrentlyComplete = isCompleteOnDate(routine, date);
+		const completedKeys = isCurrentlyComplete
+			? previousCompletedKeys.filter((item) => item !== key && item !== legacyKey)
+			: [...previousCompletedKeys.filter((item) => item !== legacyKey), key];
 
 		pendingRoutineIds = [...pendingRoutineIds, routine.id];
 		errorMessage = '';
@@ -436,6 +450,11 @@
 		} finally {
 			pendingRoutineIds = pendingRoutineIds.filter((id) => id !== routine.id);
 		}
+	}
+
+	async function toggleComplete(routine: Routine, dayName: string) {
+		const day = weekDays.find((item) => item.name === dayName);
+		await toggleCompleteOnDate(routine, dateForDay(day?.index ?? 0));
 	}
 
 	async function removeRoutine(routine: Routine) {
@@ -724,9 +743,14 @@
 					</div>
 					<div class="mt-2 grid grid-cols-7 gap-2">
 						{#each monthCells() as cell, index (index)}
-							<div class={`min-h-28 rounded-xl border p-2 ${cell ? 'border-slate-200 bg-slate-50/60' : 'border-transparent bg-transparent'}`}>
-								{#if cell}
-									<p class="mb-2 text-right text-xs font-bold text-slate-500">{cell.getDate()}</p>
+							{#if cell}
+								<button
+									type="button"
+									onclick={() => (selectedCalendarDate = selectedCalendarDate && dateKey(selectedCalendarDate) === dateKey(cell) ? null : cell)}
+									aria-pressed={selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell)}
+									class={`min-h-28 rounded-xl border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 bg-slate-50/60 hover:border-blue-300 hover:bg-blue-50/40'}`}
+								>
+									<p class={`mb-2 text-right text-xs font-bold ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'text-blue-600' : 'text-slate-500'}`}>{cell.getDate()}</p>
 									<div class="max-h-24 space-y-1 overflow-y-auto">
 										{#each routinesForDate(cell) as routine (routine.id)}
 											<p class={`truncate rounded px-1.5 py-1 text-left text-xs font-medium ${isCompleteOnDate(routine, cell) ? 'bg-emerald-100 text-emerald-700 line-through' : 'bg-white text-slate-600'}`} title={routine.title}>{routine.title}{routine.duration ? ` · ${routine.duration}m` : ''}</p>
@@ -734,11 +758,45 @@
 											<p class="text-left text-xs text-slate-300">—</p>
 										{/each}
 									</div>
-								{/if}
-							</div>
+								</button>
+							{:else}
+								<div class="min-h-28 rounded-xl border border-transparent bg-transparent"></div>
+							{/if}
 						{/each}
 					</div>
 				</section>
+
+				{#if selectedCalendarDate}
+					<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="fixed inset-0 z-40 bg-slate-900/30"></button>
+					<aside class="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:p-6 md:inset-y-0 md:inset-x-auto md:right-0 md:bottom-auto md:h-full md:max-h-none md:w-md md:rounded-none md:rounded-l-3xl" aria-label="Selected date routines">
+						<div class="mb-5 flex items-start justify-between border-b border-slate-100 pb-4">
+							<div>
+								<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Day details</p>
+								<h2 class="mt-1 text-xl font-bold text-slate-900">{fullDateLabel(selectedCalendarDate!)}</h2>
+								<p class="mt-1 text-sm text-slate-500">{routinesForDate(selectedCalendarDate!).length} {routinesForDate(selectedCalendarDate!).length === 1 ? 'routine' : 'routines'}</p>
+							</div>
+							<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
+						</div>
+						<div class="flex flex-col gap-2">
+							{#each routinesForDate(selectedCalendarDate!) as routine (routine.id)}
+								<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
+									<div class="flex items-start gap-3">
+										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isCompleteOnDate(routine, selectedCalendarDate!)} onclick={() => toggleCompleteOnDate(routine, selectedCalendarDate!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isCompleteOnDate(routine, selectedCalendarDate) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
+											<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
+										</button>
+										<div class="min-w-0 flex-1">
+											<p class={`text-sm font-semibold ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
+											<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+										</div>
+										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
+									</div>
+								</div>
+							{:else}
+								<p class="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-400">No routines planned for this day</p>
+							{/each}
+						</div>
+					</aside>
+				{/if}
 			{/if}
 		{/if}
 	</div>
