@@ -566,33 +566,33 @@ function openDeleteModal(itemId: string) {
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-<dialog bind:this={createModal} class="rounded-lg m-auto shadow-2xl backdrop:bg-black/50">
-	<div class="w-96 p-6">
+<dialog bind:this={createModal} class="m-auto w-[min(calc(100%-2rem),32rem)] rounded-2xl border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-900/40">
+	<div class="p-6">
 	<form method="post" onsubmit={(e) => {addNewTaskItem(); e.preventDefault();}}>
 		<div class="flex flex-col gap-2">
-			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class=" form-input text-black rounded-lg border border-gray-300 rounded">
-			<textarea  bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class=" rounded-lg form-textarea text-black border border-gray-300 rounded"></textarea>
+			<input required bind:value={newTask.title} type="text" name="title" id="title" placeholder="Enter title..." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+			<textarea bind:value={newTask.description} name="description" id="description" placeholder="Enter description..." class="min-h-24 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"></textarea>
 			<div class="flex flex-col gap-1">
 				<label for="date">Date</label>
-				<input bind:value={newTask.date} type="date" name="date" id="date" class="form-input text-black rounded-lg border border-gray-300 rounded">
+				<input bind:value={newTask.date} type="date" name="date" id="date" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
 			</div>
 			<div class="flex flex-col gap-1">
 				<label for="time">Time</label>
-				<input bind:value={newTask.time} type="time" name="time" id="time" class="form-input text-black rounded-lg border border-gray-300 rounded">
+				<input bind:value={newTask.time} type="time" name="time" id="time" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
 			</div>
 			<div class="flex flex-col gap-1">
 				<label for="task">Task</label>
-				<select required bind:value={newTask.task_id} name="task" id="task" class="form-select text-black rounded-lg border border-gray-300 rounded">
+				<select required bind:value={newTask.task_id} name="task" id="task" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
 					{#each tasks.data as task (task.id)}
 						<option value={task.id}>{task.Name}</option>
 					{/each}
 				</select>
 			</div>
-			<div class="flex justify-end p-2 gap-1">
-				<button type="button" onclick={() => createModal.close()} class="bg-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
+			<div class="flex justify-end gap-2 pt-3">
+				<button type="button" onclick={() => createModal.close()} class="rounded-xl px-4 py-2.5 font-semibold text-slate-600 transition hover:bg-slate-100">
 					Cancel
 				</button>
-				<button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+				<button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700">
 					Save
 				</button>
 
@@ -602,9 +602,10 @@ function openDeleteModal(itemId: string) {
 	</div>
 </dialog>
 
-<dialog bind:this={newListModal} class="rounded-lg m-auto shadow-2xl backdrop:bg-black/50">
-	<div class="w-96 p-6">
-		<h2 class="text-xl font-semibold text-slate-800 mb-4">Create New List</h2>
+<dialog bind:this={newListModal} class="m-auto w-[min(calc(100%-2rem),28rem)] rounded-2xl border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-900/40">
+	<div class="p-6">
+		<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Task planner</p>
+				<h2 class="mt-1 text-2xl font-bold text-slate-900">Create new list</h2>
 		<form onsubmit={addTask} method="post" class="flex flex-col gap-4">
 			<div class="flex flex-col gap-2">
 				<label for="listName" class="text-sm font-medium text-slate-700">List Name</label>
@@ -613,7 +614,7 @@ function openDeleteModal(itemId: string) {
 					id="listName"
 					bind:value={newTaskTitle}
 					placeholder="Enter list name..."
-					class="px-3 py-2 text-black border border-slate-300 rounded-lg focus:outline-none form-input focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
 				/>
 			</div>
 			<div class="flex flex-col gap-2">
@@ -621,7 +622,7 @@ function openDeleteModal(itemId: string) {
 				<input bind:value={newTaskColor}
 					type="color"
 					id="color"
-					class=" border border-slate-300 rounded-lg text-black form-input focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					class="h-11 w-full rounded-xl border border-slate-300 bg-white p-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
 				/>
 			</div>
 			<div class="flex gap-3 justify-end mt-4">
@@ -631,13 +632,13 @@ function openDeleteModal(itemId: string) {
 						newTaskTitle = '';
 						newListModal.close();
 					}}
-					class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+					class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100"
 				>
 					Cancel
 				</button>
 				<button
 					type="submit"
-					class="px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 transition-colors"
+					class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
 				>
 					Done
 				</button>
@@ -645,35 +646,38 @@ function openDeleteModal(itemId: string) {
 		</form>
 	</div>
 </dialog>
-<div style={`background-color:${backgroundColor}`} class="  min-h-dvh w-full flex flex-col">
-<div class="relative flex flex-wrap w-full items-center justify-center p-2 bg-white">
-	<span class="text-xl flex-1 text-center ms-0 lg:ms-70 font-semibold text-slate-400">{today.toLocaleString().replace(',', ' ')}</span>
-    <div class="text-end ">
-        <button class="rounded-lg bg-white border border-gray-300 font-semibold hover:cursor-pointer px-2 py-1">
-            Background
-            <input onchange={() => saveColor()} bind:value={backgroundColor} type="color" name="bg" id="bg">
-        </button>
-        <span class="rounded-full bg-blue-700 px-2 py-1 font-semibold text-white shadow-lg">{userInitials()}</span>
-    </div>
-</div>
-	<div class="flex w-full h-full flex-1 flex-col md:flex-row md:items-start items-center">
-		<div class="w-50 flex flex-col gap-4 p-3">
-			<button onclick={() => createModal.showModal()} class="bg-white rounded-lg gap-2 flex justify-center items-center shadow-lg p-2 transition-all hover:bg-slate-200 hover:shadow-xl hover:cursor-pointer">
-				<span class="text-xl flex text-center font-semibold">+</span>
-				<span class="">
-					Create
-
-				</span>
+<div style={`background-color:${backgroundColor}`} class="min-h-dvh w-full bg-slate-50 text-slate-900">
+	<div class="border-b border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6 lg:px-8">
+		<div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+			<div>
+				<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Task planner</p>
+				<h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">Your tasks</h1>
+				<p class="mt-1 text-sm text-slate-500">{today.toLocaleString().replace(',', ' ')}</p>
+			</div>
+			<div class="flex items-center gap-3">
+				<label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm">
+					<span>Background</span>
+					<input aria-label="Choose background color" onchange={() => saveColor()} bind:value={backgroundColor} type="color" name="bg" id="bg" class="h-7 w-7 cursor-pointer rounded-md border-0 bg-transparent p-0">
+				</label>
+				<span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-sm">{userInitials()}</span>
+			</div>
+		</div>
+	</div>
+		<div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-start lg:gap-6 lg:p-8">
+			<div class="w-full shrink-0 lg:w-64">
+			<button type="button" onclick={() => createModal.showModal()} class="flex w-full my-3 items-center justify-center gap-2 rounded-xl bg-blue-600 p-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+				<span class="text-xl leading-none">+</span>
+				<span>Create task</span>
 
 			</button>
-			<div class="flex flex-col ">
-				<div class="flex justify-between items-center">
-					<span class="text-sm font-semibold text-slate-500">
+			<div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+				<div class="flex items-center justify-between">
+					<span class="text-sm font-semibold uppercase tracking-widest text-slate-500">
 						Lists
 					</span>
-					<button type="button" onclick={() => showList = !showList} class="rounded-full w-8 h-8 transition-colors hover:cursor-pointer hover:bg-gray-200 flex items-center justify-center">
+					<button type="button" aria-label="Toggle lists" onclick={() => showList = !showList} class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-slate-100">
 
-						<svg class:rotate-180={showList} width="25px" height="25px" viewBox="0 0 24 24" class="text-slate-400" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7 10L12 15L17 10" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+						<svg class:rotate-180={showList} width="25px" height="25px" viewBox="0 0 24 24" class="text-slate-400 transition-transform" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7 10L12 15L17 10" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
 					</button>
 
 				</div>
@@ -689,7 +693,7 @@ function openDeleteModal(itemId: string) {
 				{/each}
 
 				{/if}
-				<button onclick={() => newListModal.showModal()} type="button" class="flex items-center gap-2 mt-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-gray-200 transition-colors hover:cursor-pointer">
+				<button onclick={() => newListModal.showModal()} type="button" class="mt-4 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600">
 					<svg width="25px" height="25px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
 					</svg>
@@ -697,10 +701,10 @@ function openDeleteModal(itemId: string) {
 				</button>
 			</div>
 		</div>
-		<div class="flex-1 min-h-0 justify-center w-full flex ">
+		<div class="min-w-0 flex-1">
 		{#if loggedIn}
 			{#if loading}
-			<div class="flex flex-col p-4 gap-8 mt-15">
+			<div class="grid w-full gap-4 md:grid-cols-2">
 
 				<div class=" h-70 rounded-lg  bg-white min-w-100 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
 								<div class="w-40 mt-4 ms-2 rounded h-5 bg-gray-300 animate-pulse"></div>
@@ -828,26 +832,32 @@ function openDeleteModal(itemId: string) {
     </div>
 			</dialog>
 			
-			<div class="p-4 h-full flex flex-col gap-8 flex-1 items-center mx-auto container ">
+			<div class="grid w-full gap-6">
 			
     {#each tasks.data as task, index (index) }
     {#if task.show}
 			
-    <div style={`background-color: ${task.color}`} class=" rounded-lg w-full mx-4 shadow-sm   hover:shadow-lg hover:border hover:border-slate-400 ">
-        <div class="text-lg ml-4 mt-2">{task.Name}</div>
-        <div class="flex flex-col gap-3 p-2">
-            <button type="button" onclick={() => openAddNewTaskItemModal(task.id)} class="flex justify-start gap-4 items-center px-2 py-1 hover:cursor-pointer hover:bg-blue-100 text-blue-600 font-semibold text-sm rounded-full">
+    <div style={`background-color: ${task.color}`} class="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">Task list</p>
+                <h2 class="mt-1 text-lg font-bold text-slate-900">{task.Name}</h2>
+            </div>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">{taskItemsMap().get(task.id)?.length ?? 0}</span>
+        </div>
+        <div class="flex flex-col gap-3 p-4">
+            <button type="button" onclick={() => openAddNewTaskItemModal(task.id)} class="flex w-fit items-center justify-start gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50">
                 <svg enable-background="new 0 0 24 24" focusable="false" height="24" viewBox="0 0 24 24" width="24" class="text-blue-600"><rect fill="none" height="24" width="24"></rect><path d="M22,5.18L10.59,16.6l-4.24-4.24l1.41-1.41l2.83,2.83l10-10L22,5.18z M12,20c-4.41,0-8-3.59-8-8s3.59-8,8-8 c1.57,0,3.04,0.46,4.28,1.25l1.45-1.45C16.1,2.67,14.13,2,12,2C6.48,2,2,6.48,2,12s4.48,10,10,10c1.73,0,3.36-0.44,4.78-1.22 l-1.5-1.5C14.28,19.74,13.17,20,12,20z M19,15h-3v2h3v3h2v-3h3v-2h-3v-3h-2V15z"></path></svg>
                 <span class="">Add a Task</span>
             </button>
-            <div class="max-h-[400px] overflow-y-auto">
+            <div class="max-h-100 space-y-2 overflow-y-auto pr-1">
                 {#each taskItemsMap().get(task.id) ?? [] as item, index (index)}
-                <div class="relative mb-2 overflow-hidden rounded-lg animate-[fadeInUp_220ms_ease-out] ">
+                <div class="relative overflow-hidden rounded-xl animate-[fadeInUp_220ms_ease-out]">
                     <button type="button" class="absolute inset-y-0 right-0 flex items-center justify-center bg-red-500 px-4 text-sm font-semibold text-white" onclick={(event) => { event.stopPropagation(); openDeleteModal(item.id) }}>
                         Delete
                     </button>
                     <div
-                        class="relative z-10 border-b flex items-start justify-between gap-3 bg-white px-1 pt-2 transition-transform duration-200 hover:bg-gray-200"
+                        class="relative z-10 flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 transition-transform duration-200 hover:bg-slate-50"
                         style={`transform: translateX(${swipeOffsets.get(item.id) ?? 0}px);`}
                         onpointerdown={(event) => startSwipe(event, item.id)}
                         onpointermove={(event) => moveSwipe(event, item.id)}
@@ -857,10 +867,10 @@ function openDeleteModal(itemId: string) {
                     >
                     <div class="flex items-start gap-3">
 			
-                        <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
+                        <input onchange={() => markCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="mt-1 h-5 w-5 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" id="completed-{index}">
                         <dl class="pr-10">
                             <dt class="font-semibold text-sm">{item.title}</dt>
-                            <dd class="flex flex-col pb-2 text-xs text-gray-600">
+                            <dd class="flex flex-col pb-2 text-xs text-slate-500">
                                 <span >
                                     {@html item.description}
                                 </span>
@@ -879,7 +889,7 @@ function openDeleteModal(itemId: string) {
                             </dd>
                         </dl>
                     </div>
-                    <button class="hover:cursor-pointer rounded-full px-2 py-1 border border-gray-300" onclick={() => openEditTaskItemModal(item)}>
+                    <button aria-label={`Edit ${item.title}`} class="rounded-lg border border-slate-200 p-2 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600" onclick={() => openEditTaskItemModal(item)}>
                         <svg width="15px" height="15px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M9.65661 17L6.99975 17L6.99975 14M6.10235 14.8974L17.4107 3.58902C18.1918 2.80797 19.4581 2.80797 20.2392 3.58902C21.0202 4.37007 21.0202 5.6364 20.2392 6.41745L8.764 17.8926C8.22794 18.4287 7.95992 18.6967 7.6632 18.9271C7.39965 19.1318 7.11947 19.3142 6.8256 19.4723C6.49475 19.6503 6.14115 19.7868 5.43395 20.0599L3 20.9998L3.78312 18.6501C4.05039 17.8483 4.18403 17.4473 4.3699 17.0729C4.53497 16.7404 4.73054 16.424 4.95409 16.1276C5.20582 15.7939 5.50466 15.4951 6.10235 14.8974Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                     </button>
                     </div>
@@ -892,10 +902,10 @@ function openDeleteModal(itemId: string) {
                         </div>
                         </div>
                         {#if completedTakItemsMap().get(task.id)?.length}
-                        <div class="flex flex-col gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                        <div class="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                             <div class="flex items-center gap-2">
-                                <span class="font-semibold text-slate-600 text-sm">Completed ({completedTakItemsMap().get(task.id)?.length})</span>
-                                <button aria-label="Toggle completed show   items" type="button" onclick={() => toggleCompletedShow(task.id)} class="p-1 hover:bg-gray-200 rounded transition-colors">
+                                <span class="text-sm font-semibold text-slate-600">Completed ({completedTakItemsMap().get(task.id)?.length})</span>
+                                <button aria-label="Toggle completed items" type="button" onclick={() => toggleCompletedShow(task.id)} class="rounded-lg p-1 text-slate-400 transition-colors hover:bg-white hover:text-slate-700">
                                     <svg class:rotate-180={completedItemsShowMap.get(task.id)} width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-gray-600 transition-transform">
                                         <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
                                     </svg>
@@ -904,11 +914,11 @@ function openDeleteModal(itemId: string) {
                             {#if completedItemsShowMap.get(task.id) == true}
                             <div class="flex flex-col max-h-48 overflow-y-auto">
                                 {#each completedTakItemsMap().get(task.id) ?? [] as item, index (index)}
-                                <div class="flex items-start pt-2 gap-3 mb-2  hover:bg-gray-200">
-                                    <input onchange={() => markNotCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="form-checkbox mt-1 ml-3 rounded-full" id="completed-{index}">
+                                <div class="flex items-start gap-3 rounded-lg p-2 hover:bg-white">
+                                    <input onchange={() => markNotCompleted(item.id)} bind:checked={item.completed} type="checkbox" name="completed" class="mt-1 h-5 w-5 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500" id="completed-{index}">
                                     <dl class="">
                                         <dt class="font-semibold text-sm line-through">{item.title}</dt>
-                                        <dd class="text-gray-600 pb-2 text-xs">{@html item.description}</dd>
+                                        <dd class="pb-2 text-xs text-slate-500">{@html item.description}</dd>
                                     </dl>
                                 </div>
                                 {/each}
@@ -926,11 +936,15 @@ function openDeleteModal(itemId: string) {
 			{/if}
 
 	{:else}
-	<div class="w-full  flex-1 flex items-center justify-center">
-
-		<button onclick={logIn} class="bg-blue-600 px-2 py-1 rounded shadow text-white font-semibold">
-			Log in
-		</button>
+	<div class="flex min-h-96 w-full flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white">
+		<div class="text-center">
+			<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Welcome back</p>
+			<h2 class="mt-2 text-2xl font-bold text-slate-900">Sign in to manage tasks</h2>
+			<p class="mt-2 text-slate-500">Your lists and task items will be saved to your account.</p>
+			<button type="button" onclick={logIn} class="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+				Sign in with Google
+			</button>
+		</div>
 	</div>
 	{/if}
 		</div>
