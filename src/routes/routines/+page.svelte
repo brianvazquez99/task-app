@@ -48,6 +48,9 @@
 	let editedCategoryName = $state('');
 	let selectedDays = $state<string[]>(['Monday', 'Wednesday', 'Friday']);
 	let selectedDay = $state<string | null>(weekDays[(new Date().getDay() + 6) % 7].name);
+	let activeView = $state<'week' | 'month'>('week');
+	let monthYear = $state(new Date().getFullYear());
+	let monthIndex = $state(new Date().getMonth());
 	let showForm = $state(false);
 	let showCategoryManager = $state(false);
 	let errorMessage = $state('');
@@ -77,6 +80,49 @@
 		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(
 			dateForDay(dayIndex)
 		);
+	}
+
+	function dateKey(date: Date) {
+		return date.toISOString().slice(0, 10);
+	}
+
+	function dayNameForDate(date: Date) {
+		return weekDays[(date.getDay() + 6) % 7].name;
+	}
+
+	function completionKeyForDate(date: Date, dayName = dayNameForDate(date)) {
+		return `${dateKey(date)}:${dayName}`;
+	}
+
+	function isCompleteOnDate(routine: Routine, date: Date) {
+		return routine.completedKeys.includes(completionKeyForDate(date));
+	}
+
+	function routinesForDate(date: Date) {
+		const dayName = dayNameForDate(date);
+		return routinesForDay(dayName);
+	}
+
+	function monthLabel() {
+		return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(
+			new Date(monthYear, monthIndex, 1)
+		);
+	}
+
+	function monthCells() {
+		const firstDay = new Date(monthYear, monthIndex, 1);
+		const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
+		const leadingDays = (firstDay.getDay() + 6) % 7;
+		return [
+			...Array<Date | null>(leadingDays).fill(null),
+			...Array.from({ length: daysInMonth }, (_, index) => new Date(monthYear, monthIndex, index + 1))
+		];
+	}
+
+	function changeMonth(offset: number) {
+		const nextMonth = new Date(monthYear, monthIndex + offset, 1);
+		monthYear = nextMonth.getFullYear();
+		monthIndex = nextMonth.getMonth();
 	}
 
 	function categoryOrder(categoryName: string) {
@@ -587,6 +633,12 @@
 				<p class="mt-2 text-slate-500">Your recurring checklist will be saved to your account.</p>
 			</div>
 		{:else}
+			<div class="mb-6 flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" role="tablist" aria-label="Routine view">
+				<button type="button" role="tab" aria-selected={activeView === 'week'} onclick={() => (activeView = 'week')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'week' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Week</button>
+				<button type="button" role="tab" aria-selected={activeView === 'month'} onclick={() => (activeView = 'month')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'month' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Month</button>
+			</div>
+
+			{#if activeView === 'week'}
 			<div class="overflow-x-auto pb-2">
 				<div class="grid min-w-225 grid-cols-7 gap-3">
 					{#each weekDays as day (day.name)}
@@ -594,7 +646,7 @@
 							type="button"
 							onclick={() => (selectedDay = selectedDay === day.name ? null : day.name)}
 							aria-pressed={selectedDay === day.name}
-							class={`rounded-2xl max-h-[150px] overflow-y-auto border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-blue-500 bg-blue-50 shadow-blue-100' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'}`}
+							class={`rounded-2xl max-h-37.5 overflow-y-auto border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-blue-500 bg-blue-50 shadow-blue-100' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'}`}
 						>
 							<div class="flex items-start justify-between gap-2 sticky top-0  z-10">
 								<div class="min-w-0">
@@ -651,6 +703,41 @@
 					</div>
 					<h2 class="mt-4 text-lg font-bold text-slate-900">Choose a day</h2>
 					<p class="mt-1 text-sm text-slate-500">Click a day card above to see its routines.</p>
+				</section>
+			{/if}
+			{:else}
+				<section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+					<div class="mb-6 flex items-center justify-between">
+						<div>
+							<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Monthly overview</p>
+							<h2 class="mt-1 text-2xl font-bold text-slate-900">{monthLabel()}</h2>
+						</div>
+						<div class="flex items-center gap-2">
+							<button type="button" aria-label="Previous month" onclick={() => changeMonth(-1)} class="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600">←</button>
+							<button type="button" aria-label="Next month" onclick={() => changeMonth(1)} class="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600">→</button>
+						</div>
+					</div>
+					<div class="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+						{#each weekDays as day (day.name)}
+							<div>{day.short}</div>
+						{/each}
+					</div>
+					<div class="mt-2 grid grid-cols-7 gap-2">
+						{#each monthCells() as cell, index (index)}
+							<div class={`min-h-28 rounded-xl border p-2 ${cell ? 'border-slate-200 bg-slate-50/60' : 'border-transparent bg-transparent'}`}>
+								{#if cell}
+									<p class="mb-2 text-right text-xs font-bold text-slate-500">{cell.getDate()}</p>
+									<div class="max-h-24 space-y-1 overflow-y-auto">
+										{#each routinesForDate(cell) as routine (routine.id)}
+											<p class={`truncate rounded px-1.5 py-1 text-left text-xs font-medium ${isCompleteOnDate(routine, cell) ? 'bg-emerald-100 text-emerald-700 line-through' : 'bg-white text-slate-600'}`} title={routine.title}>{routine.title}{routine.duration ? ` · ${routine.duration}m` : ''}</p>
+										{:else}
+											<p class="text-left text-xs text-slate-300">—</p>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
 				</section>
 			{/if}
 		{/if}
