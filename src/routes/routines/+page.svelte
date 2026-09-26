@@ -594,16 +594,22 @@
 							type="button"
 							onclick={() => (selectedDay = selectedDay === day.name ? null : day.name)}
 							aria-pressed={selectedDay === day.name}
-							class={`rounded-2xl border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-blue-500 bg-blue-50 shadow-blue-100' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'}`}
+							class={`rounded-2xl max-h-[150px] overflow-y-auto border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-blue-500 bg-blue-50 shadow-blue-100' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'}`}
 						>
-							<div class="flex items-start justify-between gap-2">
+							<div class="flex items-start justify-between gap-2 sticky top-0  z-10">
 								<div class="min-w-0">
 									<h2 class="truncate font-bold text-slate-900">{day.name}</h2>
 									<p class="text-xs text-slate-400">{formattedDate(day.index)}</p>
 								</div>
 								<span class={`rounded-full px-2 py-1 text-xs font-semibold ${selectedDay === day.name ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>{routinesForDay(day.name).length}</span>
 							</div>
-							<p class="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">View routines</p>
+							<div class="mt-3 max-h-28 space-y-1 overflow-y-auto pr-1">
+								{#each routinesForDay(day.name) as routine (routine.id)}
+									<p class={`truncate rounded-md px-2 py-1 text-xs font-medium ${isComplete(routine, day.name) ? 'bg-emerald-100 text-emerald-700 line-through' : 'bg-slate-100 text-slate-600'}`} title={routine.title}>{routine.title}</p>
+								{:else}
+									<p class="py-2 text-xs text-slate-400">No routines planned</p>
+								{/each}
+							</div>
 						</button>
 					{/each}
 				</div>
