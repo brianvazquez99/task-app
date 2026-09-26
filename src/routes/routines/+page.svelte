@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { onAuthStateChanged, type User } from 'firebase/auth';
-	import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+	import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 
 	type RoutineCategory = {
@@ -35,6 +35,7 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let savingCategory = $state(false);
+	let pendingRoutineIds = $state<string[]>([]);
 	let currentUser = $state<User | null>(null);
 	let title = $state('');
 	let category = $state('Morning');
@@ -155,22 +156,34 @@
 			return;
 		}
 
+		const previousCategory = category;
+		const categoryRef = doc(collection(db, 'Routine Categories'));
+		const newCategory: RoutineCategory = {
+			id: categoryRef.id,
+			name,
+			order: categories.length,
+			userId: currentUser.uid
+		};
+
 		savingCategory = true;
 		categoryErrorMessage = '';
+		categories = [...categories, newCategory];
+		category = name;
+		newCategoryName = '';
+
 		try {
-			const newCategory = {
+			await setDoc(categoryRef, {
 				name,
-				order: categories.length,
-				userId: currentUser.uid,
+				order: newCategory.order,
+				userId: newCategory.userId,
 				createdAt: serverTimestamp()
-			};
-			const categoryRef = await addDoc(collection(db, 'Routine Categories'), newCategory);
-			categories = [...categories, { id: categoryRef.id, ...newCategory }];
-			category = name;
-			newCategoryName = '';
+			});
 		} catch (error) {
 			console.error(error);
-			categoryErrorMessage = 'Unable to add this category. Please try again.';
+			categories = categories.filter((item) => item.id !== newCategory.id);
+			if (category === name) category = previousCategory;
+			if (!newCategoryName) newCategoryName = name;
+			categoryErrorMessage = 'Unable to add this category. Your change was reverted.';
 		} finally {
 			savingCategory = false;
 		}
@@ -193,24 +206,42 @@
 			return;
 		}
 
+		const previousName = item.name;
+		const previousCategory = category;
+		const affectedRoutineIds = routines
+			.filter((entry) => entry.category === previousName)
+			.map((entry) => entry.id);
+
 		savingCategory = true;
 		categoryErrorMessage = '';
+		categories = categories.map((entry) => (entry.id === item.id ? { ...entry, name } : entry));
+		routines = routines.map((routine) =>
+			affectedRoutineIds.includes(routine.id) ? { ...routine, category: name } : routine
+		);
+		if (category === previousName) category = name;
+		editingCategoryId = null;
+
 		try {
 			const batch = writeBatch(db);
 			batch.update(doc(db, 'Routine Categories', item.id), { name });
-			for (const routine of routines.filter((entry) => entry.category === item.name)) {
-				batch.update(doc(db, 'Routines', routine.id), { category: name });
+			for (const routineId of affectedRoutineIds) {
+				batch.update(doc(db, 'Routines', routineId), { category: name });
 			}
 			await batch.commit();
-			categories = categories.map((entry) => (entry.id === item.id ? { ...entry, name } : entry));
-			routines = routines.map((routine) =>
-				routine.category === item.name ? { ...routine, category: name } : routine
-			);
-			if (category === item.name) category = name;
-			editingCategoryId = null;
 		} catch (error) {
 			console.error(error);
-			categoryErrorMessage = 'Unable to rename this category. Please try again.';
+			categories = categories.map((entry) =>
+				entry.id === item.id ? { ...entry, name: previousName } : entry
+			);
+			routines = routines.map((routine) =>
+				affectedRoutineIds.includes(routine.id) && routine.category === name
+					? { ...routine, category: previousName }
+					: routine
+			);
+			if (previousCategory === previousName && category === name) category = previousName;
+			editingCategoryId = item.id;
+			editedCategoryName = name;
+			categoryErrorMessage = 'Unable to rename this category. Your change was reverted.';
 		} finally {
 			savingCategory = false;
 		}
@@ -229,24 +260,44 @@
 			: `Delete “${item.name}”?`;
 		if (!window.confirm(message)) return;
 
+		const categoryIndex = categories.findIndex((entry) => entry.id === item.id);
+		const previousCategory = category;
+		const previousEditingCategoryId = editingCategoryId;
+		const affectedRoutineIds = routines
+			.filter((entry) => entry.category === item.name)
+			.map((entry) => entry.id);
+
 		savingCategory = true;
 		categoryErrorMessage = '';
+		categories = categories.filter((entry) => entry.id !== item.id);
+		routines = routines.map((routine) =>
+			affectedRoutineIds.includes(routine.id)
+				? { ...routine, category: fallbackCategory.name }
+				: routine
+		);
+		if (category === item.name) category = fallbackCategory.name;
+		if (editingCategoryId === item.id) editingCategoryId = null;
+
 		try {
 			const batch = writeBatch(db);
-			for (const routine of routines.filter((entry) => entry.category === item.name)) {
-				batch.update(doc(db, 'Routines', routine.id), { category: fallbackCategory.name });
+			for (const routineId of affectedRoutineIds) {
+				batch.update(doc(db, 'Routines', routineId), { category: fallbackCategory.name });
 			}
 			batch.delete(doc(db, 'Routine Categories', item.id));
 			await batch.commit();
-			categories = categories.filter((entry) => entry.id !== item.id);
-			routines = routines.map((routine) =>
-				routine.category === item.name ? { ...routine, category: fallbackCategory.name } : routine
-			);
-			if (category === item.name) category = fallbackCategory.name;
-			if (editingCategoryId === item.id) editingCategoryId = null;
 		} catch (error) {
 			console.error(error);
-			categoryErrorMessage = 'Unable to delete this category. Please try again.';
+			const restoredCategories = [...categories];
+			restoredCategories.splice(categoryIndex, 0, item);
+			categories = restoredCategories;
+			routines = routines.map((routine) =>
+				affectedRoutineIds.includes(routine.id) && routine.category === fallbackCategory.name
+					? { ...routine, category: item.name }
+					: routine
+			);
+			if (previousCategory === item.name && category === fallbackCategory.name) category = item.name;
+			editingCategoryId = previousEditingCategoryId;
+			categoryErrorMessage = 'Unable to delete this category. Your change was reverted.';
 		} finally {
 			savingCategory = false;
 		}
@@ -256,53 +307,89 @@
 		event.preventDefault();
 		if (!db || !currentUser || !title.trim() || selectedDays.length === 0) return;
 
+		const previousTitle = title;
+		const previousCategory = category;
+		const previousSelectedDays = [...selectedDays];
+		const routineRef = doc(collection(db, 'Routines'));
+		const routine: Routine = {
+			id: routineRef.id,
+			title: title.trim(),
+			category,
+			days: [...selectedDays],
+			completedKeys: [],
+			userId: currentUser.uid
+		};
+
 		saving = true;
 		errorMessage = '';
+		routines = [...routines, routine];
+		title = '';
+		category = categories[0]?.name ?? 'Morning';
+		selectedDays = ['Monday', 'Wednesday', 'Friday'];
+		showForm = false;
+
 		try {
-			const routine = {
-				title: title.trim(),
-				category,
-				days: [...selectedDays],
-				completedKeys: [],
-				userId: currentUser.uid,
+			await setDoc(routineRef, {
+				title: routine.title,
+				category: routine.category,
+				days: routine.days,
+				completedKeys: routine.completedKeys,
+				userId: routine.userId,
 				createdAt: serverTimestamp()
-			};
-			const routineRef = await addDoc(collection(db, 'Routines'), routine);
-			routines.push({ id: routineRef.id, ...routine, completedKeys: [] });
-			title = '';
-			category = categories[0]?.name ?? 'Morning';
-			selectedDays = ['Monday', 'Wednesday', 'Friday'];
-			showForm = false;
+			});
 		} catch (error) {
 			console.error(error);
-			errorMessage = 'Unable to save this routine. Please try again.';
+			routines = routines.filter((item) => item.id !== routine.id);
+			title = previousTitle;
+			category = previousCategory;
+			selectedDays = previousSelectedDays;
+			showForm = true;
+			errorMessage = 'Unable to save this routine. Your change was reverted.';
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function toggleComplete(routine: Routine, dayName: string) {
-		if (!db) return;
+		if (!db || pendingRoutineIds.includes(routine.id)) return;
+		const previousCompletedKeys = [...routine.completedKeys];
 		const key = completionKey(dayName);
-		const completedKeys = isComplete(routine, dayName)
-			? routine.completedKeys.filter((item) => item !== key)
-			: [...routine.completedKeys, key];
+		const completedKeys = previousCompletedKeys.includes(key)
+			? previousCompletedKeys.filter((item) => item !== key)
+			: [...previousCompletedKeys, key];
+
+		pendingRoutineIds = [...pendingRoutineIds, routine.id];
+		errorMessage = '';
 		routine.completedKeys = completedKeys;
 
 		try {
 			await updateDoc(doc(db, 'Routines', routine.id), { completedKeys });
 		} catch (error) {
 			console.error(error);
-			routine.completedKeys = isComplete(routine, dayName)
-				? routine.completedKeys.filter((item) => item !== key)
-				: [...routine.completedKeys, key];
+			const currentRoutine = routines.find((item) => item.id === routine.id);
+			if (currentRoutine) currentRoutine.completedKeys = previousCompletedKeys;
+			errorMessage = 'Unable to update this routine. Your change was reverted.';
+		} finally {
+			pendingRoutineIds = pendingRoutineIds.filter((id) => id !== routine.id);
 		}
 	}
 
 	async function removeRoutine(routine: Routine) {
-		if (!db) return;
-		await deleteDoc(doc(db, 'Routines', routine.id));
+		if (!db || pendingRoutineIds.includes(routine.id)) return;
+		const routineIndex = routines.findIndex((item) => item.id === routine.id);
+
+		errorMessage = '';
 		routines = routines.filter((item) => item.id !== routine.id);
+
+		try {
+			await deleteDoc(doc(db, 'Routines', routine.id));
+		} catch (error) {
+			console.error(error);
+			const restoredRoutines = [...routines];
+			restoredRoutines.splice(routineIndex, 0, routine);
+			routines = restoredRoutines;
+			errorMessage = 'Unable to delete this routine. Your change was reverted.';
+		}
 	}
 
 	onMount(() => {
@@ -471,14 +558,14 @@
 							{#each routinesForDay(day.name) as routine (routine.id)}
 								<div class={`group rounded-xl border p-3 transition ${isComplete(routine, day.name) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
 									<div class="flex items-start gap-3">
-										<button type="button" aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, day.name)} onclick={() => toggleComplete(routine, day.name)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${isComplete(routine, day.name) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
+										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, day.name)} onclick={() => toggleComplete(routine, day.name)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isComplete(routine, day.name) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
 											<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
 										</button>
 										<div class="min-w-0 flex-1">
 											<p class={`text-sm font-semibold ${isComplete(routine, day.name) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
 											<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}</p>
 										</div>
-										<button type="button" aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100">✕</button>
+										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
 									</div>
 								</div>
 							{:else}
