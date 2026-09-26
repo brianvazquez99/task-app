@@ -14,6 +14,7 @@
 		id: string;
 		title: string;
 		category: string;
+		duration?: number;
 		days: string[];
 		completedKeys: string[];
 		userId: string;
@@ -39,6 +40,7 @@
 	let currentUser = $state<User | null>(null);
 	let title = $state('');
 	let category = $state('Morning');
+	let duration = $state<number | ''>('');
 	let newCategoryName = $state('');
 	let editingCategoryId = $state<string | null>(null);
 	let editedCategoryName = $state('');
@@ -104,6 +106,7 @@
 				id: routineDoc.id,
 				title: String(data.title ?? ''),
 				category: String(data.category ?? 'Morning'),
+				duration: typeof data.duration === 'number' && data.duration > 0 ? data.duration : undefined,
 				days: Array.isArray(data.days) ? data.days : [],
 				completedKeys: Array.isArray(data.completedKeys) ? data.completedKeys : [],
 				userId: String(data.userId ?? userId)
@@ -309,12 +312,14 @@
 
 		const previousTitle = title;
 		const previousCategory = category;
+		const previousDuration = duration;
 		const previousSelectedDays = [...selectedDays];
 		const routineRef = doc(collection(db, 'Routines'));
 		const routine: Routine = {
 			id: routineRef.id,
 			title: title.trim(),
 			category,
+			...(duration !== '' ? { duration } : {}),
 			days: [...selectedDays],
 			completedKeys: [],
 			userId: currentUser.uid
@@ -325,6 +330,7 @@
 		routines = [...routines, routine];
 		title = '';
 		category = categories[0]?.name ?? 'Morning';
+		duration = '';
 		selectedDays = ['Monday', 'Wednesday', 'Friday'];
 		showForm = false;
 
@@ -332,6 +338,7 @@
 			await setDoc(routineRef, {
 				title: routine.title,
 				category: routine.category,
+				...(routine.duration !== undefined ? { duration: routine.duration } : {}),
 				days: routine.days,
 				completedKeys: routine.completedKeys,
 				userId: routine.userId,
@@ -342,6 +349,7 @@
 			routines = routines.filter((item) => item.id !== routine.id);
 			title = previousTitle;
 			category = previousCategory;
+			duration = previousDuration;
 			selectedDays = previousSelectedDays;
 			showForm = true;
 			errorMessage = 'Unable to save this routine. Your change was reverted.';
@@ -504,7 +512,7 @@
 					</div>
 					<button type="button" aria-label="Close form" onclick={() => (showForm = false)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 				</div>
-				<div class="grid gap-4 md:grid-cols-[1fr_180px]">
+				<div class="grid gap-4 md:grid-cols-[1fr_180px_140px]">
 					<label class="block">
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Routine item</span>
 						<input required bind:value={title} placeholder="e.g. Read for 20 minutes" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
@@ -516,6 +524,13 @@
 								<option value={option.name}>{option.name}</option>
 							{/each}
 						</select>
+					</label>
+					<label class="block">
+						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Duration <span class="font-normal text-slate-400">(optional)</span></span>
+						<div class="relative">
+							<input min="1" step="1" type="number" bind:value={duration} placeholder="20" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-12 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+							<span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-400">min</span>
+						</div>
 					</label>
 				</div>
 				<div class="mt-5">
@@ -563,7 +578,9 @@
 										</button>
 										<div class="min-w-0 flex-1">
 											<p class={`text-sm font-semibold ${isComplete(routine, day.name) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
-											<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}</p>
+											<p class="mt-1 text-xs font-medium text-slate-400">
+												{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}
+											</p>
 										</div>
 										<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
 									</div>
