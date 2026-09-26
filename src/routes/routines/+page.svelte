@@ -558,26 +558,26 @@
 	<meta name="description" content="Plan recurring routines across your week." />
 </svelte:head>
 
-<main class="min-h-dvh bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+<main class="min-h-dvh bg-stone-50 px-4 py-8 sm:px-6 lg:px-8">
 	<div class="mx-auto max-w-7xl">
 		<div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
 			<div>
-				<p class="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-600">Weekly planner</p>
-				<h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Your routines</h1>
-				<p class="mt-2 max-w-xl text-slate-600">Build habits that repeat on the days that work for you.</p>
+				<p class="mb-2 text-sm font-semibold uppercase tracking-widest text-emerald-700">Weekly planner</p>
+				<h1 class="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">Your routines</h1>
+				<p class="mt-2 max-w-xl text-stone-600">Build habits that repeat on the days that work for you.</p>
 			</div>
 			<div class="flex flex-col gap-2 sm:flex-row">
 				<button
 					type="button"
 					onclick={() => (showCategoryManager = !showCategoryManager)}
-					class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+					class="inline-flex items-center justify-center rounded-xl border border-stone-300 bg-white px-4 py-3 font-semibold text-stone-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
 				>
 					Manage categories
 				</button>
 				<button
 					type="button"
 					onclick={() => (showForm = !showForm)}
-					class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+					class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
 				>
 					<svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 5v14m-7-7h14" /></svg>
 					Add routine
@@ -586,11 +586,11 @@
 		</div>
 
 		{#if showCategoryManager && currentUser}
-			<section class="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+			<section class="mb-8 rounded-2xl border border-stone-200 bg-[#fffdf8] p-5 shadow-sm sm:p-6">
 				<div class="mb-5 flex items-start justify-between gap-4">
 					<div>
-						<h2 class="text-lg font-bold text-slate-900">Manage categories</h2>
-						<p class="text-sm text-slate-500">Add categories or change how your routines are grouped.</p>
+						<h2 class="text-lg font-bold text-stone-900">Manage categories</h2>
+						<p class="text-sm text-stone-500">Add categories or change how your routines are grouped.</p>
 					</div>
 					<button type="button" aria-label="Close category manager" onclick={() => (showCategoryManager = false)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 				</div>
@@ -599,24 +599,24 @@
 					<div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{categoryErrorMessage}</div>
 				{/if}
 
-				<div class="divide-y divide-slate-100 rounded-xl border border-slate-200">
+				<div class="divide-y divide-stone-100 rounded-xl border border-stone-200">
 					{#each categories as item (item.id)}
 						<div class="flex min-h-16 items-center gap-3 px-4 py-3">
 							{#if editingCategoryId === item.id}
 								<form class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row" onsubmit={(event) => { event.preventDefault(); renameCategory(item); }}>
 									<label class="sr-only" for={`category-${item.id}`}>Category name</label>
-									<input id={`category-${item.id}`} required maxlength="50" bind:value={editedCategoryName} class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+									<input id={`category-${item.id}`} required maxlength="50" bind:value={editedCategoryName} class="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
 									<div class="flex gap-2">
-										<button type="submit" disabled={savingCategory} class="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50">Save</button>
-										<button type="button" disabled={savingCategory} onclick={() => (editingCategoryId = null)} class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+										<button type="submit" disabled={savingCategory} class="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">Save</button>
+										<button type="button" disabled={savingCategory} onclick={() => (editingCategoryId = null)} class="rounded-lg px-3 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
 									</div>
 								</form>
 							{:else}
 								<div class="min-w-0 flex-1">
-									<p class="truncate font-semibold text-slate-800">{item.name}</p>
+									<p class="truncate font-semibold text-stone-800">{item.name}</p>
 									<p class="text-xs text-slate-400">{routines.filter((routine) => routine.category === item.name).length} routines</p>
 								</div>
-								<button type="button" disabled={savingCategory} onclick={() => startEditingCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-50">Edit</button>
+								<button type="button" disabled={savingCategory} onclick={() => startEditingCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">Edit</button>
 								<button type="button" disabled={savingCategory || categories.length === 1} onclick={() => removeCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
 							{/if}
 						</div>
@@ -625,29 +625,29 @@
 
 				<form onsubmit={addCategory} class="mt-5 flex flex-col gap-2 sm:flex-row">
 					<label class="sr-only" for="new-category">New category name</label>
-					<input id="new-category" required maxlength="50" bind:value={newCategoryName} placeholder="e.g. Lunch break" class="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
-					<button type="submit" disabled={savingCategory || !newCategoryName.trim()} class="rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">{savingCategory ? 'Saving…' : 'Add category'}</button>
+					<input id="new-category" required maxlength="50" bind:value={newCategoryName} placeholder="e.g. Lunch break" class="min-w-0 flex-1 rounded-xl border border-stone-300 px-3 py-2.5 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+					<button type="submit" disabled={savingCategory || !newCategoryName.trim()} class="rounded-xl bg-emerald-700 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">{savingCategory ? 'Saving…' : 'Add category'}</button>
 				</form>
 			</section>
 		{/if}
 
 		{#if showForm}
-			<form onsubmit={addRoutine} class="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+			<form onsubmit={addRoutine} class="mb-8 rounded-2xl border border-stone-200 bg-[#fffdf8] p-5 shadow-sm sm:p-6">
 				<div class="mb-5 flex items-center justify-between">
 					<div>
-						<h2 class="text-lg font-bold text-slate-900">Create a recurring routine</h2>
-						<p class="text-sm text-slate-500">Choose every day this item should appear.</p>
+						<h2 class="text-lg font-bold text-stone-900">Create a recurring routine</h2>
+						<p class="text-sm text-stone-500">Choose how often this item should appear.</p>
 					</div>
 					<button type="button" aria-label="Close form" onclick={() => (showForm = false)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 				</div>
 				<div class="grid gap-4 md:grid-cols-[1fr_180px_140px]">
 					<label class="block">
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Routine item</span>
-						<input required bind:value={title} placeholder="e.g. Read for 20 minutes" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+						<input required bind:value={title} placeholder="e.g. Read for 20 minutes" class="w-full rounded-xl border border-stone-300 px-3 py-2.5 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
 					</label>
 					<label class="block">
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
-						<select required bind:value={category} class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+						<select required bind:value={category} class="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
 							{#each categories as option (option.id)}
 								<option value={option.name}>{option.name}</option>
 							{/each}
@@ -656,39 +656,39 @@
 					<label class="block">
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Duration <span class="font-normal text-slate-400">(optional)</span></span>
 						<div class="relative">
-							<input min="1" step="1" type="number" bind:value={duration} placeholder="20" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-12 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+							<input min="1" step="1" type="number" bind:value={duration} placeholder="20" class="w-full rounded-xl border border-stone-300 px-3 py-2.5 pr-12 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
 							<span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-400">min</span>
 						</div>
 					</label>
 				</div>
 				<div class="mt-5">
 					<span class="mb-2 block text-sm font-semibold text-slate-700">Repeat pattern</span>
-					<div class="mb-4 flex w-fit rounded-xl border border-slate-200 bg-slate-50 p-1">
-						<button type="button" onclick={() => (recurrenceMode = 'weekdays')} aria-pressed={recurrenceMode === 'weekdays'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'weekdays' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>Days of the week</button>
-						<button type="button" onclick={() => (recurrenceMode = 'monthDates')} aria-pressed={recurrenceMode === 'monthDates'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'monthDates' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>Specific dates</button>
+					<div class="mb-4 flex w-fit rounded-xl border border-stone-200 bg-stone-50 p-1">
+						<button type="button" onclick={() => (recurrenceMode = 'weekdays')} aria-pressed={recurrenceMode === 'weekdays'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'weekdays' ? 'bg-emerald-700 text-white shadow-sm' : 'text-stone-600 hover:bg-white'}`}>Days of the week</button>
+						<button type="button" onclick={() => (recurrenceMode = 'monthDates')} aria-pressed={recurrenceMode === 'monthDates'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'monthDates' ? 'bg-emerald-700 text-white shadow-sm' : 'text-stone-600 hover:bg-white'}`}>Specific dates</button>
 					</div>
 					{#if recurrenceMode === 'weekdays'}
 						<div class="mb-2 flex flex-wrap items-center gap-2">
 							<span class="mr-1 text-sm font-semibold text-slate-700">Repeat on</span>
-							<button type="button" onclick={() => toggleDayGroup(weekdays)} aria-pressed={weekdays.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekdays.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}>Weekdays</button>
-							<button type="button" onclick={() => toggleDayGroup(weekends)} aria-pressed={weekends.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekends.every((day) => selectedDays.includes(day)) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600'}`}>Weekends</button>
+							<button type="button" onclick={() => toggleDayGroup(weekdays)} aria-pressed={weekdays.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekdays.every((day) => selectedDays.includes(day)) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400 hover:text-emerald-700'}`}>Weekdays</button>
+							<button type="button" onclick={() => toggleDayGroup(weekends)} aria-pressed={weekends.every((day) => selectedDays.includes(day))} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${weekends.every((day) => selectedDays.includes(day)) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400 hover:text-emerald-700'}`}>Weekends</button>
 						</div>
 						<div class="flex flex-wrap gap-2">
 							{#each weekDays as day (day.name)}
-								<button type="button" onclick={() => toggleDay(day.name)} class={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedDays.includes(day.name) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`} aria-pressed={selectedDays.includes(day.name)}>{day.short}</button>
+								<button type="button" onclick={() => toggleDay(day.name)} class={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${selectedDays.includes(day.name) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400'}`} aria-pressed={selectedDays.includes(day.name)}>{day.short}</button>
 							{/each}
 						</div>
 					{:else}
 						<p class="mb-3 text-sm text-slate-500">Choose one or more dates that repeat every month.</p>
 						<div class="grid max-w-xl grid-cols-7 gap-2">
 							{#each Array.from({ length: 31 }, (_, index) => index + 1) as date (date)}
-								<button type="button" onclick={() => toggleMonthDate(date)} aria-pressed={selectedMonthDates.includes(date)} class={`rounded-lg border px-2 py-2 text-sm font-semibold transition ${selectedMonthDates.includes(date) ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-600 hover:border-blue-400'}`}>{date}</button>
+								<button type="button" onclick={() => toggleMonthDate(date)} aria-pressed={selectedMonthDates.includes(date)} class={`rounded-lg border px-2 py-2 text-sm font-semibold transition ${selectedMonthDates.includes(date) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400'}`}>{date}</button>
 							{/each}
 						</div>
 					{/if}
 				</div>
 				<div class="mt-5 flex justify-end">
-					<button disabled={saving || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-slate-900 px-4 py-2.5 font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : 'Save routine'}</button>
+					<button disabled={saving || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-emerald-800 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : 'Save routine'}</button>
 				</div>
 			</form>
 		{/if}
@@ -705,9 +705,9 @@
 				<p class="mt-2 text-slate-500">Your recurring checklist will be saved to your account.</p>
 			</div>
 		{:else}
-			<div class="mb-6 flex w-fit rounded-xl border border-slate-200 bg-white p-1 shadow-sm" role="tablist" aria-label="Routine view">
-				<button type="button" role="tab" aria-selected={activeView === 'week'} onclick={() => (activeView = 'week')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'week' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Week</button>
-				<button type="button" role="tab" aria-selected={activeView === 'month'} onclick={() => (activeView = 'month')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'month' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Month</button>
+			<div class="mb-6 flex w-fit rounded-xl border border-stone-200 bg-[#fffdf8] p-1 shadow-sm" role="tablist" aria-label="Routine view">
+				<button type="button" role="tab" aria-selected={activeView === 'week'} onclick={() => (activeView = 'week')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'week' ? 'bg-emerald-700 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>Week</button>
+				<button type="button" role="tab" aria-selected={activeView === 'month'} onclick={() => (activeView = 'month')} class={`rounded-lg px-4 py-2 text-sm font-semibold transition ${activeView === 'month' ? 'bg-emerald-700 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>Month</button>
 			</div>
 
 			{#if activeView === 'week'}
@@ -718,7 +718,7 @@
 							type="button"
 							onclick={() => (selectedDay = selectedDay === day.name ? null : day.name)}
 							aria-pressed={selectedDay === day.name}
-							class={`rounded-2xl max-h-37.5 overflow-y-auto border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-blue-500 bg-blue-50 shadow-blue-100' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40'}`}
+							class={`rounded-2xl max-h-37.5 overflow-y-auto border p-4 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${selectedDay === day.name ? 'border-emerald-500 bg-emerald-50 shadow-emerald-100' : 'border-stone-200 bg-[#fffdf8] hover:border-emerald-300 hover:bg-emerald-50/40'}`}
 						>
 							<div class="flex items-start justify-between gap-2 sticky top-0  z-10">
 								<div class="min-w-0">
@@ -740,35 +740,35 @@
 			</div>
 
 			{#if selectedDay}
-			<section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+			<section class="mt-6 rounded-2xl border border-stone-200 bg-[#fffdf8] p-5 shadow-sm sm:p-6">
 				<div class="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
 					<div>
-						<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Daily details</p>
-						<h2 class="mt-1 text-2xl font-bold text-slate-900">{selectedDay}</h2>
-						<p class="text-sm text-slate-500">{formattedDate(weekDays.find((day) => day.name === selectedDay)?.index ?? 0)}</p>
+						<p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">Daily details</p>
+						<h2 class="mt-1 text-2xl font-bold text-stone-900">{selectedDay}</h2>
+						<p class="text-sm text-stone-500">{formattedDate(weekDays.find((day) => day.name === selectedDay)?.index ?? 0)}</p>
 					</div>
-					<span class="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600">{routinesForDay(selectedDay!).length} {routinesForDay(selectedDay!).length === 1 ? 'routine' : 'routines'}</span>
+					<span class="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800">{routinesForDay(selectedDay!).length} {routinesForDay(selectedDay!).length === 1 ? 'routine' : 'routines'}</span>
 				</div>
 				<div class="flex flex-col gap-3">
 					{#each categories as routineCategory (routineCategory.id)}
 						{@const categoryRoutines = routinesForCategory(selectedDay!, routineCategory.name)}
-						<section class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+						<section class="overflow-hidden rounded-xl border border-stone-200 bg-amber-50/40">
 							<button
 								type="button"
 								onclick={() => toggleDetailCategory(routineCategory.name)}
 								aria-expanded={!collapsedDetailCategories.includes(routineCategory.name)}
-								class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-blue-50/60"
+								class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-amber-100/60"
 							>
-								<span class="min-w-0 truncate font-bold text-slate-800">{routineCategory.name}</span>
+								<span class="min-w-0 truncate font-bold text-stone-800">{routineCategory.name}</span>
 								<span class="flex items-center gap-2">
 									<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">{categoryRoutines.length}</span>
 									<svg aria-hidden="true" class={`h-4 w-4 text-slate-400 transition-transform ${collapsedDetailCategories.includes(routineCategory.name) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
 								</span>
 							</button>
 							{#if !collapsedDetailCategories.includes(routineCategory.name)}
-								<div class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3">
+								<div class="flex flex-col gap-2 border-t border-stone-200 bg-[#fffdf8] p-3">
 									{#each categoryRoutines as routine (routine.id)}
-										<div class={`group rounded-xl border p-3 transition ${isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
+										<div class={`group rounded-xl border p-3 transition ${isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'}`}>
 											<div class="flex items-start gap-3">
 												<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, selectedDay!)} onclick={() => toggleComplete(routine, selectedDay!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isComplete(routine, selectedDay!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
 													<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
@@ -799,15 +799,15 @@
 				</section>
 			{/if}
 			{:else}
-				<section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+				<section class="rounded-2xl border border-stone-200 bg-[#fffdf8] p-4 shadow-sm sm:p-6">
 					<div class="mb-6 flex items-center justify-between">
 						<div>
-							<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Monthly overview</p>
-							<h2 class="mt-1 text-2xl font-bold text-slate-900">{monthLabel()}</h2>
+							<p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">Monthly overview</p>
+							<h2 class="mt-1 text-2xl font-bold text-stone-900">{monthLabel()}</h2>
 						</div>
 						<div class="flex items-center gap-2">
-							<button type="button" aria-label="Previous month" onclick={() => changeMonth(-1)} class="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600">←</button>
-							<button type="button" aria-label="Next month" onclick={() => changeMonth(1)} class="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600">→</button>
+							<button type="button" aria-label="Previous month" onclick={() => changeMonth(-1)} class="rounded-lg border border-stone-200 p-2 text-stone-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">←</button>
+							<button type="button" aria-label="Next month" onclick={() => changeMonth(1)} class="rounded-lg border border-stone-200 p-2 text-stone-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700">→</button>
 						</div>
 					</div>
 					<div class="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -822,9 +822,9 @@
 									type="button"
 									onclick={() => (selectedCalendarDate = selectedCalendarDate && dateKey(selectedCalendarDate) === dateKey(cell) ? null : cell)}
 									aria-pressed={selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell)}
-									class={`min-h-28 rounded-xl border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 bg-slate-50/60 hover:border-blue-300 hover:bg-blue-50/40'}`}
+									class={`min-h-28 rounded-xl border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'border-emerald-500 bg-emerald-50 shadow-sm' : 'border-stone-200 bg-stone-50/60 hover:border-emerald-300 hover:bg-emerald-50/40'}`}
 								>
-									<p class={`mb-2 text-right text-xs font-bold ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'text-blue-600' : 'text-slate-500'}`}>{cell.getDate()}</p>
+									<p class={`mb-2 text-right text-xs font-bold ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'text-emerald-700' : 'text-stone-500'}`}>{cell.getDate()}</p>
 									<div class="max-h-24 space-y-1 overflow-y-auto">
 										{#each routinesForDate(cell) as routine (routine.id)}
 											<p class={`truncate rounded px-1.5 py-1 text-left text-xs font-medium ${isCompleteOnDate(routine, cell) ? 'bg-emerald-100 text-emerald-700 line-through' : 'bg-white text-slate-600'}`} title={routine.title}>{routine.title}{routine.duration ? ` · ${routine.duration}m` : ''}</p>
@@ -841,36 +841,36 @@
 				</section>
 
 				{#if selectedCalendarDate}
-					<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="fixed inset-0 z-40 bg-slate-900/30"></button>
-					<aside class="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:p-6 md:inset-y-0 md:inset-x-auto md:right-0 md:bottom-auto md:h-full md:max-h-none md:w-md md:rounded-none md:rounded-l-3xl" aria-label="Selected date routines">
-						<div class="mb-5 flex items-start justify-between border-b border-slate-100 pb-4">
+					<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="fixed inset-0 z-40 bg-stone-900/30"></button>
+					<aside class="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-[#fffdf8] p-5 shadow-2xl sm:p-6 md:inset-y-0 md:inset-x-auto md:right-0 md:bottom-auto md:h-full md:max-h-none md:w-md md:rounded-none md:rounded-l-3xl" aria-label="Selected date routines">
+						<div class="mb-5 flex items-start justify-between border-b border-stone-100 pb-4">
 							<div>
-								<p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Day details</p>
-								<h2 class="mt-1 text-xl font-bold text-slate-900">{fullDateLabel(selectedCalendarDate!)}</h2>
-								<p class="mt-1 text-sm text-slate-500">{routinesForDate(selectedCalendarDate!).length} {routinesForDate(selectedCalendarDate!).length === 1 ? 'routine' : 'routines'}</p>
+								<p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">Day details</p>
+								<h2 class="mt-1 text-xl font-bold text-stone-900">{fullDateLabel(selectedCalendarDate!)}</h2>
+								<p class="mt-1 text-sm text-stone-500">{routinesForDate(selectedCalendarDate!).length} {routinesForDate(selectedCalendarDate!).length === 1 ? 'routine' : 'routines'}</p>
 							</div>
 							<button type="button" aria-label="Close date details" onclick={() => (selectedCalendarDate = null)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 						</div>
 						<div class="flex flex-col gap-3">
 							{#each categories as routineCategory (routineCategory.id)}
 								{@const categoryRoutines = routinesForDate(selectedCalendarDate!).filter((routine) => routine.category === routineCategory.name)}
-								<section class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60">
+								<section class="overflow-hidden rounded-xl border border-stone-200 bg-amber-50/40">
 									<button
 										type="button"
 										onclick={() => toggleDrawerCategory(routineCategory.name)}
 										aria-expanded={!collapsedDrawerCategories.includes(routineCategory.name)}
-										class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-blue-50/60"
+										class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-amber-100/60"
 									>
-										<span class="min-w-0 truncate font-bold text-slate-800">{routineCategory.name}</span>
+										<span class="min-w-0 truncate font-bold text-stone-800">{routineCategory.name}</span>
 										<span class="flex items-center gap-2">
 											<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">{categoryRoutines.length}</span>
 											<svg aria-hidden="true" class={`h-4 w-4 text-slate-400 transition-transform ${collapsedDrawerCategories.includes(routineCategory.name) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
 										</span>
 									</button>
 									{#if !collapsedDrawerCategories.includes(routineCategory.name)}
-										<div class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3">
+										<div class="flex flex-col gap-2 border-t border-stone-200 bg-[#fffdf8] p-3">
 											{#each categoryRoutines as routine (routine.id)}
-												<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/70 hover:border-blue-200 hover:bg-blue-50/40'}`}>
+												<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'}`}>
 													<div class="flex items-start gap-3">
 														<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isCompleteOnDate(routine, selectedCalendarDate!)} onclick={() => toggleCompleteOnDate(routine, selectedCalendarDate!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
 															<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>

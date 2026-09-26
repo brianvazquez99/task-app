@@ -5,10 +5,10 @@
 	let { children } = $props();
 </script>
 
-<header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
+<header class="sticky top-0 z-50 border-b border-stone-200/80 bg-[#fffdf8]/95 shadow-sm backdrop-blur">
 	<nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6" aria-label="Main navigation">
-		<a href={resolve('/task-app')} class="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-800 transition-colors hover:text-blue-600">
-			<span class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+		<a href={resolve('/task-app')} class="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-800 transition-colors hover:text-emerald-700">
+			<span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm">
 				<svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75h6M9 12h6m-6 5.25h6M5.25 4.5A2.25 2.25 0 0 1 7.5 2.25h9a2.25 2.25 0 0 1 2.25 2.25v15A2.25 2.25 0 0 1 16.5 21.75h-9a2.25 2.25 0 0 1-2.25-2.25v-15Z" />
 				</svg>
@@ -16,10 +16,10 @@
 			<span>Task App</span>
 		</a>
 
-		<div class="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+		<div class="flex items-center gap-1 rounded-xl border border-stone-200 bg-amber-50/70 p-1">
 			<a
 				href={resolve('/task-app')}
-				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:px-4 ${page.url.pathname === '/task-app' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}
+				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:px-4 ${page.url.pathname === '/task-app' ? 'bg-white text-emerald-800 shadow-sm' : 'text-stone-600 hover:bg-white/80 hover:text-stone-900'}`}
 				aria-current={page.url.pathname === '/task-app' ? 'page' : undefined}
 			>
 				<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -29,7 +29,7 @@
 			</a>
 			<a
 				href={resolve('/routines')}
-				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:px-4 ${page.url.pathname === '/routines' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'}`}
+				class={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:px-4 ${page.url.pathname === '/routines' ? 'bg-white text-emerald-800 shadow-sm' : 'text-stone-600 hover:bg-white/80 hover:text-stone-900'}`}
 				aria-current={page.url.pathname === '/routines' ? 'page' : undefined}
 			>
 				<svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
