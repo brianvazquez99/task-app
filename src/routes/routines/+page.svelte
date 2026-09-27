@@ -23,11 +23,12 @@
 		days: string[];
 		completedKeys: string[];
 		userId: string;
+		groupId?: string;
 	};
 	type RoutineDraft = {
 		id: number;
 		title: string;
-		category: string;
+		categories: string[];
 		duration: number | '';
 	};
 
@@ -53,6 +54,7 @@
 	let currentUser = $state<User | null>(null);
 	let title = $state('');
 	let category = $state('Morning');
+	let selectedCategories = $state<string[]>(['Morning']);
 	let duration = $state<number | ''>('');
 	let additionalRoutineDrafts = $state<RoutineDraft[]>([]);
 	let nextRoutineDraftId = 1;
@@ -228,6 +230,7 @@
 				title: String(data.title ?? ''),
 				category: String(data.category ?? 'Morning'),
 				order: typeof data.order === 'number' ? data.order : index,
+				groupId: typeof data.groupId === 'string' ? data.groupId : undefined,
 				duration: typeof data.duration === 'number' && data.duration > 0 ? data.duration : undefined,
 				recurrence: data.recurrence === 'monthDates' ? 'monthDates' : 'weekdays',
 				monthDates: Array.isArray(data.monthDates) ? data.monthDates.filter((date): date is number => typeof date === 'number') : [],
@@ -433,6 +436,7 @@
 	function resetRoutineForm() {
 		title = '';
 		category = categories[0]?.name ?? 'Morning';
+		selectedCategories = [category];
 		duration = '';
 		additionalRoutineDrafts = [];
 		recurrenceMode = 'weekdays';
@@ -453,7 +457,7 @@
 			{
 				id: nextRoutineDraftId++,
 				title: '',
-				category: categories[0]?.name ?? 'Morning',
+				categories: [categories[0]?.name ?? 'Morning'],
 				duration: ''
 			}
 		];
@@ -463,14 +467,31 @@
 		additionalRoutineDrafts = additionalRoutineDrafts.filter((draft) => draft.id !== id);
 	}
 
+	function toggleRoutineCategory(categoryName: string) {
+		selectedCategories = selectedCategories.includes(categoryName)
+			? selectedCategories.filter((name) => name !== categoryName)
+			: [...selectedCategories, categoryName];
+	}
+
+	function toggleDraftCategory(draft: RoutineDraft, categoryName: string) {
+		draft.categories = draft.categories.includes(categoryName)
+			? draft.categories.filter((name) => name !== categoryName)
+			: [...draft.categories, categoryName];
+	}
+
 	function closeRoutineForm() {
 		resetRoutineForm();
 		showForm = false;
 	}
 
 	function startEditingRoutine(routine: Routine) {
+		const groupId = routine.groupId ?? routine.id;
+		const groupedRoutines = routines
+			.filter((item) => (item.groupId ?? item.id) === groupId)
+			.sort((a, b) => a.order - b.order);
 		title = routine.title;
 		category = routine.category;
+		selectedCategories = [...new Set(groupedRoutines.map((item) => item.category))];
 		duration = routine.duration ?? '';
 		additionalRoutineDrafts = [];
 		recurrenceMode = routine.recurrence;
@@ -489,7 +510,8 @@
 			!db ||
 			!currentUser ||
 			!title.trim() ||
-			additionalRoutineDrafts.some((draft) => !draft.title.trim()) ||
+			selectedCategories.length === 0 ||
+			additionalRoutineDrafts.some((draft) => !draft.title.trim() || draft.categories.length === 0) ||
 			(recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)
 		) return;
 
@@ -501,46 +523,87 @@
 				return;
 			}
 
-			const previousRoutine: Routine = {
-				...existingRoutine,
-				monthDates: [...existingRoutine.monthDates],
-				days: [...existingRoutine.days],
-				completedKeys: [...existingRoutine.completedKeys]
-			};
-			const updatedRoutine: Routine = {
-				...existingRoutine,
-				title: title.trim(),
-				category,
-				duration: duration === '' ? undefined : duration,
-				recurrence: recurrenceMode,
-				monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
-				days: recurrenceMode === 'weekdays' ? [...selectedDays] : []
-			};
+			const groupId = existingRoutine.groupId ?? existingRoutine.id;
+			const groupedRoutines = routines.filter((item) => (item.groupId ?? item.id) === groupId);
+			const previousGroup = groupedRoutines.map((item) => ({
+				...item,
+				monthDates: [...item.monthDates],
+				days: [...item.days],
+				completedKeys: [...item.completedKeys]
+			}));
+			const nextRoutineOrder = routines.reduce((maxOrder, routine) => Math.max(maxOrder, routine.order), -1) + 1;
+			const updatedGroup = selectedCategories.map((categoryName, index) => {
+				const matchingRoutine = groupedRoutines.find((item) => item.category === categoryName);
+				const routineRef = matchingRoutine ? doc(db!, 'Routines', matchingRoutine.id) : doc(collection(db!, 'Routines'));
+				return {
+					ref: routineRef,
+					isNew: !matchingRoutine,
+					routine: {
+						...(matchingRoutine ?? {}),
+						id: routineRef.id,
+						title: title.trim(),
+						category: categoryName,
+						order: matchingRoutine?.order ?? nextRoutineOrder + index,
+						duration: duration === '' ? undefined : duration,
+						recurrence: recurrenceMode,
+						monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
+						days: recurrenceMode === 'weekdays' ? [...selectedDays] : [],
+						completedKeys: matchingRoutine?.completedKeys ?? [],
+						userId: existingRoutine.userId,
+						groupId
+					} satisfies Routine
+				};
+			});
+			const removedRoutines = groupedRoutines.filter((item) => !selectedCategories.includes(item.category));
 
 			saving = true;
 			errorMessage = '';
-			routines = routines.map((item) => (item.id === routineId ? updatedRoutine : item));
+			routines = routines
+				.filter((item) => !groupedRoutines.some((groupedRoutine) => groupedRoutine.id === item.id))
+				.concat(updatedGroup.map(({ routine }) => routine));
 			resetRoutineForm();
 			showForm = false;
 
 			try {
-				await updateDoc(doc(db, 'Routines', routineId), {
-					title: updatedRoutine.title,
-					category: updatedRoutine.category,
-					duration: updatedRoutine.duration ?? deleteField(),
-					recurrence: updatedRoutine.recurrence,
-					monthDates: updatedRoutine.monthDates,
-					days: updatedRoutine.days
-				});
+				const batch = writeBatch(db);
+				for (const { ref, routine, isNew } of updatedGroup) {
+					const routineData = {
+						title: routine.title,
+						category: routine.category,
+						order: routine.order,
+						recurrence: routine.recurrence,
+						monthDates: routine.monthDates,
+						days: routine.days,
+						completedKeys: routine.completedKeys,
+						userId: routine.userId,
+						groupId: routine.groupId
+					};
+					if (isNew) {
+						batch.set(ref, {
+							...routineData,
+							...(routine.duration !== undefined ? { duration: routine.duration } : {}),
+							createdAt: serverTimestamp()
+						});
+					} else {
+						batch.update(ref, { ...routineData, duration: routine.duration ?? deleteField() });
+					}
+				}
+				for (const removedRoutine of removedRoutines) {
+					batch.delete(doc(db, 'Routines', removedRoutine.id));
+				}
+				await batch.commit();
 			} catch (error) {
 				console.error(error);
-				routines = routines.map((item) => (item.id === routineId ? previousRoutine : item));
-				title = updatedRoutine.title;
-				category = updatedRoutine.category;
-				duration = updatedRoutine.duration ?? '';
-				recurrenceMode = updatedRoutine.recurrence;
-				selectedMonthDates = [...updatedRoutine.monthDates];
-				selectedDays = [...updatedRoutine.days];
+				routines = routines
+					.filter((item) => !updatedGroup.some(({ routine }) => routine.id === item.id))
+					.concat(previousGroup);
+				title = existingRoutine.title;
+				category = existingRoutine.category;
+				selectedCategories = previousGroup.map((item) => item.category);
+				duration = existingRoutine.duration ?? '';
+				recurrenceMode = existingRoutine.recurrence;
+				selectedMonthDates = [...existingRoutine.monthDates];
+				selectedDays = [...existingRoutine.days];
 				editingRoutineId = routineId;
 				showForm = true;
 				errorMessage = 'Unable to update this routine. Your change was reverted.';
@@ -554,37 +617,43 @@
 		const previousTitle = title;
 		const previousCategory = category;
 		const previousDuration = duration;
-		const previousAdditionalRoutineDrafts = additionalRoutineDrafts.map((draft) => ({ ...draft }));
+		const previousSelectedCategories = [...selectedCategories];
+		const previousAdditionalRoutineDrafts = additionalRoutineDrafts.map((draft) => ({ ...draft, categories: [...draft.categories] }));
 		const previousRecurrenceMode = recurrenceMode;
 		const previousMonthDates = [...selectedMonthDates];
 		const previousSelectedDays = [...selectedDays];
 		const nextRoutineOrder = routines.reduce((maxOrder, routine) => Math.max(maxOrder, routine.order), -1) + 1;
+		let routineOrderOffset = 0;
 		const routineInputs = [
-			{ title, category, duration },
+			{ title, categories: selectedCategories, duration, groupId: doc(collection(db!, 'Routine Groups')).id },
 			...additionalRoutineDrafts.map((draft) => ({
 				title: draft.title,
-				category: draft.category,
-				duration: draft.duration
+				categories: draft.categories,
+				duration: draft.duration,
+				groupId: doc(collection(db!, 'Routine Groups')).id
 			}))
 		];
-		const newRoutines = routineInputs.map((input, index) => {
-			const routineRef = doc(collection(db!, 'Routines'));
-			return {
-				ref: routineRef,
-				routine: {
-					id: routineRef.id,
-					title: input.title.trim(),
-					category: input.category,
-					order: nextRoutineOrder + index,
-					...(input.duration !== '' ? { duration: input.duration } : {}),
-					recurrence: recurrenceMode,
-					monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
-					days: recurrenceMode === 'weekdays' ? [...selectedDays] : [],
-					completedKeys: [],
-					userId
-				} satisfies Routine
-			};
-		});
+		const newRoutines = routineInputs.flatMap((input) =>
+			input.categories.map((routineCategory) => {
+				const routineRef = doc(collection(db!, 'Routines'));
+				return {
+					ref: routineRef,
+					routine: {
+						id: routineRef.id,
+						title: input.title.trim(),
+						category: routineCategory,
+						order: nextRoutineOrder + routineOrderOffset++,
+						...(input.duration !== '' ? { duration: input.duration } : {}),
+						recurrence: recurrenceMode,
+						monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
+						days: recurrenceMode === 'weekdays' ? [...selectedDays] : [],
+						completedKeys: [],
+						userId,
+						groupId: input.groupId
+					} satisfies Routine
+				};
+			})
+		);
 
 		saving = true;
 		errorMessage = '';
@@ -605,6 +674,7 @@
 					days: routine.days,
 					completedKeys: routine.completedKeys,
 					userId: routine.userId,
+					groupId: routine.groupId,
 					createdAt: serverTimestamp()
 				});
 			}
@@ -615,6 +685,7 @@
 			routines = routines.filter((item) => !newRoutineIds.has(item.id));
 			title = previousTitle;
 			category = previousCategory;
+			selectedCategories = previousSelectedCategories;
 			duration = previousDuration;
 			additionalRoutineDrafts = previousAdditionalRoutineDrafts;
 			recurrenceMode = previousRecurrenceMode;
@@ -752,6 +823,8 @@
 					category = categories.some((item) => item.name === category)
 						? category
 						: (categories[0]?.name ?? 'Morning');
+					selectedCategories = selectedCategories.filter((name) => categories.some((item) => item.name === name));
+					if (selectedCategories.length === 0) selectedCategories = [category];
 				} catch (error) {
 					console.error(error);
 					errorMessage = 'Unable to load your routines.';
@@ -859,14 +932,15 @@
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Routine item</span>
 						<input required bind:value={title} placeholder="e.g. Read for 20 minutes" class="w-full rounded-xl border border-stone-300 px-3 py-2.5 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
 					</label>
-					<label class="block">
-						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
-						<select required bind:value={category} class="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
+					<div class="block">
+						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Categories</span>
+						<div class="flex flex-wrap gap-2">
 							{#each categories as option (option.id)}
-								<option value={option.name}>{option.name}</option>
+								<button type="button" onclick={() => toggleRoutineCategory(option.name)} aria-pressed={selectedCategories.includes(option.name)} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${selectedCategories.includes(option.name) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400 hover:text-emerald-700'}`}>{option.name}</button>
 							{/each}
-						</select>
-					</label>
+						</div>
+						<p class="mt-1.5 text-xs text-slate-400">Select one or more categories.</p>
+					</div>
 					<label class="block">
 						<span class="mb-1.5 block text-sm font-semibold text-slate-700">Duration <span class="font-normal text-slate-400">(optional)</span></span>
 						<div class="relative">
@@ -887,14 +961,15 @@
 									<span class="sr-only">Routine {index + 2} item</span>
 									<input required bind:value={draft.title} placeholder="Routine name" class="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
 								</label>
-								<label class="block">
-									<span class="sr-only">Routine {index + 2} category</span>
-									<select required bind:value={draft.category} class="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
+								<div class="block">
+									<span class="sr-only">Routine {index + 2} categories</span>
+									<div class="flex flex-wrap gap-2">
 										{#each categories as option (option.id)}
-											<option value={option.name}>{option.name}</option>
+											<button type="button" onclick={() => toggleDraftCategory(draft, option.name)} aria-pressed={draft.categories.includes(option.name)} class={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${draft.categories.includes(option.name) ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-emerald-400 hover:text-emerald-700'}`}>{option.name}</button>
 										{/each}
-									</select>
-								</label>
+									</div>
+									<p class="mt-1.5 text-xs text-slate-400">Select categories</p>
+								</div>
 								<label class="block">
 									<span class="sr-only">Routine {index + 2} duration in minutes</span>
 									<div class="relative">
@@ -912,8 +987,8 @@
 				{/if}
 				<div class="mt-5">
 					<span class="mb-2 block text-sm font-semibold text-slate-700">Repeat pattern</span>
-					{#if !editingRoutineId && additionalRoutineDrafts.length > 0}
-						<p class="mb-3 text-sm text-slate-500">This repeat pattern applies to all {additionalRoutineDrafts.length + 1} routines.</p>
+					{#if !editingRoutineId && (additionalRoutineDrafts.length > 0 || selectedCategories.length > 1)}
+						<p class="mb-3 text-sm text-slate-500">This repeat pattern applies to all selected routines and category copies.</p>
 					{/if}
 					<div class="mb-4 flex w-fit rounded-xl border border-stone-200 bg-stone-50 p-1">
 						<button type="button" onclick={() => (recurrenceMode = 'weekdays')} aria-pressed={recurrenceMode === 'weekdays'} class={`rounded-lg px-3 py-2 text-sm font-semibold transition ${recurrenceMode === 'weekdays' ? 'bg-emerald-700 text-white shadow-sm' : 'text-stone-600 hover:bg-white'}`}>Days of the week</button>
@@ -943,7 +1018,7 @@
 					{#if editingRoutineId}
 						<button type="button" disabled={saving} onclick={closeRoutineForm} class="rounded-xl px-4 py-2.5 font-semibold text-stone-600 transition hover:bg-stone-100 disabled:opacity-50">Cancel</button>
 					{/if}
-					<button disabled={saving || additionalRoutineDrafts.some((draft) => !draft.title.trim()) || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-emerald-800 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : editingRoutineId ? 'Update routine' : additionalRoutineDrafts.length > 0 ? `Save ${additionalRoutineDrafts.length + 1} routines` : 'Save routine'}</button>
+					<button disabled={saving || selectedCategories.length === 0 || additionalRoutineDrafts.some((draft) => !draft.title.trim() || draft.categories.length === 0) || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-emerald-800 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : editingRoutineId ? 'Update routine' : selectedCategories.length + additionalRoutineDrafts.reduce((count, draft) => count + draft.categories.length, 0) > 1 ? `Save ${selectedCategories.length + additionalRoutineDrafts.reduce((count, draft) => count + draft.categories.length, 0)} routines` : 'Save routine'}</button>
 				</div>
 			</form>
 		{/if}
