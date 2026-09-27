@@ -77,6 +77,9 @@
 	let draggedRoutineId = $state<string | null>(null);
 	let dragOverRoutineId = $state<string | null>(null);
 	let reorderingRoutineIds = $state<string[]>([]);
+	let draggedCategoryId = $state<string | null>(null);
+	let dragOverCategoryId = $state<string | null>(null);
+	let savingCategoryOrder = $state(false);
 	let errorMessage = $state('');
 	let categoryErrorMessage = $state('');
 
@@ -275,6 +278,60 @@
 		return categories.some(
 			(item) => item.id !== excludedId && item.name.toLocaleLowerCase() === name.toLocaleLowerCase()
 		);
+	}
+
+	function startDraggingCategory(item: RoutineCategory, event: DragEvent) {
+		if (savingCategory || savingCategoryOrder) return;
+		draggedCategoryId = item.id;
+		event.dataTransfer?.setData('text/plain', item.id);
+		if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+	}
+
+	function handleCategoryDragOver(item: RoutineCategory, event: DragEvent) {
+		if (!draggedCategoryId || draggedCategoryId === item.id || savingCategoryOrder) return;
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+		dragOverCategoryId = item.id;
+	}
+
+	function endDraggingCategory() {
+		draggedCategoryId = null;
+		dragOverCategoryId = null;
+	}
+
+	async function dropCategory(item: RoutineCategory, event: DragEvent) {
+		event.preventDefault();
+		const sourceId = draggedCategoryId;
+		endDraggingCategory();
+		if (!db || !sourceId || sourceId === item.id || savingCategoryOrder) return;
+
+		const sourceIndex = categories.findIndex((categoryItem) => categoryItem.id === sourceId);
+		const targetIndex = categories.findIndex((categoryItem) => categoryItem.id === item.id);
+		if (sourceIndex === -1 || targetIndex === -1) return;
+
+		const previousOrders = new Map(categories.map((categoryItem) => [categoryItem.id, categoryItem.order]));
+		const reorderedCategories = [...categories];
+		const [movedCategory] = reorderedCategories.splice(sourceIndex, 1);
+		reorderedCategories.splice(targetIndex, 0, movedCategory);
+		categories = reorderedCategories.map((categoryItem, index) => ({ ...categoryItem, order: index }));
+		savingCategoryOrder = true;
+		categoryErrorMessage = '';
+
+		try {
+			const batch = writeBatch(db);
+			for (const categoryItem of categories) {
+				batch.update(doc(db, 'Routine Categories', categoryItem.id), { order: categoryItem.order });
+			}
+			await batch.commit();
+		} catch (error) {
+			console.error(error);
+			categories = categories
+				.map((categoryItem) => ({ ...categoryItem, order: previousOrders.get(categoryItem.id) ?? categoryItem.order }))
+				.sort((a, b) => a.order - b.order);
+			categoryErrorMessage = 'Unable to reorder categories. Your change was reverted.';
+		} finally {
+			savingCategoryOrder = false;
+		}
 	}
 
 	async function addCategory(event: SubmitEvent) {
@@ -888,7 +945,16 @@
 
 				<div class="divide-y divide-stone-100 rounded-xl border border-stone-200">
 					{#each categories as item (item.id)}
-						<div class="flex min-h-16 items-center gap-3 px-4 py-3">
+						<div
+							draggable={!savingCategory && !savingCategoryOrder}
+							ondragstart={(event) => startDraggingCategory(item, event)}
+							ondragover={(event) => handleCategoryDragOver(item, event)}
+							ondrop={(event) => dropCategory(item, event)}
+							ondragend={endDraggingCategory}
+							role="listitem"
+							aria-label={`Drag to reorder ${item.name}`}
+							class={`flex min-h-16 items-center gap-3 px-4 py-3 transition ${dragOverCategoryId === item.id ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-400' : ''} ${draggedCategoryId === item.id ? 'cursor-grabbing opacity-85 shadow-lg' : 'cursor-grab'}`}
+						>
 							{#if editingCategoryId === item.id}
 								<form class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row" onsubmit={(event) => { event.preventDefault(); renameCategory(item); }}>
 									<label class="sr-only" for={`category-${item.id}`}>Category name</label>
@@ -903,17 +969,18 @@
 									<p class="truncate font-semibold text-stone-800">{item.name}</p>
 									<p class="text-xs text-slate-400">{routines.filter((routine) => routine.category === item.name).length} routines</p>
 								</div>
-								<button type="button" disabled={savingCategory} onclick={() => startEditingCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">Edit</button>
-								<button type="button" disabled={savingCategory || categories.length === 1} onclick={() => removeCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
+								<button type="button" disabled={savingCategory || savingCategoryOrder} onclick={() => startEditingCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">Edit</button>
+								<button type="button" disabled={savingCategory || savingCategoryOrder || categories.length === 1} onclick={() => removeCategory(item)} class="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
 							{/if}
 						</div>
 					{/each}
 				</div>
 
+				<p class="mt-3 text-xs text-slate-400">Drag categories to change their order.</p>
 				<form onsubmit={addCategory} class="mt-5 flex flex-col gap-2 sm:flex-row">
 					<label class="sr-only" for="new-category">New category name</label>
 					<input id="new-category" required maxlength="50" bind:value={newCategoryName} placeholder="e.g. Lunch break" class="min-w-0 flex-1 rounded-xl border border-stone-300 px-3 py-2.5 text-stone-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
-					<button type="submit" disabled={savingCategory || !newCategoryName.trim()} class="rounded-xl bg-emerald-700 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">{savingCategory ? 'Saving…' : 'Add category'}</button>
+					<button type="submit" disabled={savingCategory || savingCategoryOrder || !newCategoryName.trim()} class="rounded-xl bg-emerald-700 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">{savingCategory ? 'Saving…' : 'Add category'}</button>
 				</form>
 			</section>
 		{/if}
