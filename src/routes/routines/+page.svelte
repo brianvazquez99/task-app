@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { auth, db } from '$lib/firebase/firebase.app';
 	import { onAuthStateChanged, type User } from 'firebase/auth';
-	import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
+	import { collection, deleteDoc, deleteField, doc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 	import { onMount } from 'svelte';
 	import '../layout.css' 
 
@@ -61,6 +61,7 @@
 	let monthIndex = $state(new Date().getMonth());
 	let selectedCalendarDate = $state<Date | null>(null);
 	let showForm = $state(false);
+	let editingRoutineId = $state<string | null>(null);
 	let showCategoryManager = $state(false);
 	let errorMessage = $state('');
 	let categoryErrorMessage = $state('');
@@ -412,6 +413,41 @@
 		}
 	}
 
+	function resetRoutineForm() {
+		title = '';
+		category = categories[0]?.name ?? 'Morning';
+		duration = '';
+		recurrenceMode = 'weekdays';
+		selectedMonthDates = [];
+		selectedDays = ['Monday', 'Wednesday', 'Friday'];
+		editingRoutineId = null;
+	}
+
+	function openCreateRoutineForm() {
+		resetRoutineForm();
+		errorMessage = '';
+		showForm = true;
+	}
+
+	function closeRoutineForm() {
+		resetRoutineForm();
+		showForm = false;
+	}
+
+	function startEditingRoutine(routine: Routine) {
+		title = routine.title;
+		category = routine.category;
+		duration = routine.duration ?? '';
+		recurrenceMode = routine.recurrence;
+		selectedMonthDates = [...routine.monthDates];
+		selectedDays = [...routine.days];
+		editingRoutineId = routine.id;
+		errorMessage = '';
+		selectedCalendarDate = null;
+		showForm = true;
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
 	async function addRoutine(event: SubmitEvent) {
 		event.preventDefault();
 		if (
@@ -420,6 +456,63 @@
 			!title.trim() ||
 			(recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)
 		) return;
+
+		if (editingRoutineId) {
+			const routineId = editingRoutineId;
+			const existingRoutine = routines.find((item) => item.id === routineId);
+			if (!existingRoutine) {
+				errorMessage = 'This routine could not be found.';
+				return;
+			}
+
+			const previousRoutine: Routine = {
+				...existingRoutine,
+				monthDates: [...existingRoutine.monthDates],
+				days: [...existingRoutine.days],
+				completedKeys: [...existingRoutine.completedKeys]
+			};
+			const updatedRoutine: Routine = {
+				...existingRoutine,
+				title: title.trim(),
+				category,
+				duration: duration === '' ? undefined : duration,
+				recurrence: recurrenceMode,
+				monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
+				days: recurrenceMode === 'weekdays' ? [...selectedDays] : []
+			};
+
+			saving = true;
+			errorMessage = '';
+			routines = routines.map((item) => (item.id === routineId ? updatedRoutine : item));
+			resetRoutineForm();
+			showForm = false;
+
+			try {
+				await updateDoc(doc(db, 'Routines', routineId), {
+					title: updatedRoutine.title,
+					category: updatedRoutine.category,
+					duration: updatedRoutine.duration ?? deleteField(),
+					recurrence: updatedRoutine.recurrence,
+					monthDates: updatedRoutine.monthDates,
+					days: updatedRoutine.days
+				});
+			} catch (error) {
+				console.error(error);
+				routines = routines.map((item) => (item.id === routineId ? previousRoutine : item));
+				title = updatedRoutine.title;
+				category = updatedRoutine.category;
+				duration = updatedRoutine.duration ?? '';
+				recurrenceMode = updatedRoutine.recurrence;
+				selectedMonthDates = [...updatedRoutine.monthDates];
+				selectedDays = [...updatedRoutine.days];
+				editingRoutineId = routineId;
+				showForm = true;
+				errorMessage = 'Unable to update this routine. Your change was reverted.';
+			} finally {
+				saving = false;
+			}
+			return;
+		}
 
 		const previousTitle = title;
 		const previousCategory = category;
@@ -443,12 +536,7 @@
 		saving = true;
 		errorMessage = '';
 		routines = [...routines, routine];
-		title = '';
-		category = categories[0]?.name ?? 'Morning';
-		duration = '';
-		recurrenceMode = 'weekdays';
-		selectedMonthDates = [];
-		selectedDays = ['Monday', 'Wednesday', 'Friday'];
+		resetRoutineForm();
 		showForm = false;
 
 		try {
@@ -576,7 +664,7 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => (showForm = !showForm)}
+					onclick={openCreateRoutineForm}
 					class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
 				>
 					<svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 5v14m-7-7h14" /></svg>
@@ -635,10 +723,10 @@
 			<form onsubmit={addRoutine} class="mb-8 rounded-2xl border border-stone-200 bg-[#fffdf8] p-5 shadow-sm sm:p-6">
 				<div class="mb-5 flex items-center justify-between">
 					<div>
-						<h2 class="text-lg font-bold text-stone-900">Create a recurring routine</h2>
-						<p class="text-sm text-stone-500">Choose how often this item should appear.</p>
+						<h2 class="text-lg font-bold text-stone-900">{editingRoutineId ? 'Edit routine' : 'Create a recurring routine'}</h2>
+						<p class="text-sm text-stone-500">{editingRoutineId ? 'Update the routine details and repeat pattern.' : 'Choose how often this item should appear.'}</p>
 					</div>
-					<button type="button" aria-label="Close form" onclick={() => (showForm = false)} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
+					<button type="button" aria-label="Close form" onclick={closeRoutineForm} class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">✕</button>
 				</div>
 				<div class="grid gap-4 md:grid-cols-[1fr_180px_140px]">
 					<label class="block">
@@ -687,8 +775,11 @@
 						</div>
 					{/if}
 				</div>
-				<div class="mt-5 flex justify-end">
-					<button disabled={saving || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-emerald-800 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : 'Save routine'}</button>
+				<div class="mt-5 flex justify-end gap-2">
+					{#if editingRoutineId}
+						<button type="button" disabled={saving} onclick={closeRoutineForm} class="rounded-xl px-4 py-2.5 font-semibold text-stone-600 transition hover:bg-stone-100 disabled:opacity-50">Cancel</button>
+					{/if}
+					<button disabled={saving || (recurrenceMode === 'weekdays' ? selectedDays.length === 0 : selectedMonthDates.length === 0)} type="submit" class="rounded-xl bg-emerald-800 px-4 py-2.5 font-semibold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Saving…' : editingRoutineId ? 'Update routine' : 'Save routine'}</button>
 				</div>
 			</form>
 		{/if}
@@ -777,7 +868,10 @@
 													<p class={`text-sm font-semibold ${isComplete(routine, selectedDay!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
 													<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
 												</div>
-												<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
+												<div class="flex items-center gap-1 opacity-100 transition">
+													<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Edit ${routine.title}`} onclick={() => startEditingRoutine(routine)} class="rounded-md px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-wait">Edit</button>
+													<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="rounded-md px-2 py-1 text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-wait">✕</button>
+												</div>
 											</div>
 										</div>
 									{:else}
@@ -879,7 +973,10 @@
 															<p class={`text-sm font-semibold ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
 															<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
 														</div>
-														<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="text-slate-300 opacity-0 transition hover:text-red-500 disabled:cursor-wait group-hover:opacity-100">✕</button>
+														<div class="flex items-center gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+															<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Edit ${routine.title}`} onclick={() => startEditingRoutine(routine)} class="rounded-md px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-wait">Edit</button>
+															<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Delete ${routine.title}`} onclick={() => removeRoutine(routine)} class="rounded-md px-2 py-1 text-slate-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-wait">✕</button>
+														</div>
 													</div>
 												</div>
 											{:else}
