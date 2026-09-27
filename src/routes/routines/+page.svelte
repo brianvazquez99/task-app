@@ -16,6 +16,7 @@
 		id: string;
 		title: string;
 		category: string;
+		order: number;
 		duration?: number;
 		recurrence: RecurrenceMode;
 		monthDates: number[];
@@ -71,6 +72,9 @@
 	let showForm = $state(false);
 	let editingRoutineId = $state<string | null>(null);
 	let showCategoryManager = $state(false);
+	let draggedRoutineId = $state<string | null>(null);
+	let dragOverRoutineId = $state<string | null>(null);
+	let reorderingRoutineIds = $state<string[]>([]);
 	let errorMessage = $state('');
 	let categoryErrorMessage = $state('');
 
@@ -125,7 +129,11 @@
 	function routinesForDate(date: Date) {
 		return routines
 			.filter((routine) => routineRepeatsOnDate(routine, date))
-			.sort((a, b) => categoryOrder(a.category) - categoryOrder(b.category));
+			.sort(
+				(a, b) =>
+					categoryOrder(a.category) - categoryOrder(b.category) ||
+					a.order - b.order
+			);
 	}
 
 	function monthLabel() {
@@ -213,12 +221,13 @@
 	async function loadRoutines(userId: string) {
 		if (!db) return;
 		const snapshot = await getDocs(query(collection(db, 'Routines'), where('userId', '==', userId)));
-		routines = snapshot.docs.map((routineDoc) => {
+		routines = snapshot.docs.map((routineDoc, index) => {
 			const data = routineDoc.data();
 			return {
 				id: routineDoc.id,
 				title: String(data.title ?? ''),
 				category: String(data.category ?? 'Morning'),
+				order: typeof data.order === 'number' ? data.order : index,
 				duration: typeof data.duration === 'number' && data.duration > 0 ? data.duration : undefined,
 				recurrence: data.recurrence === 'monthDates' ? 'monthDates' : 'weekdays',
 				monthDates: Array.isArray(data.monthDates) ? data.monthDates.filter((date): date is number => typeof date === 'number') : [],
@@ -549,6 +558,7 @@
 		const previousRecurrenceMode = recurrenceMode;
 		const previousMonthDates = [...selectedMonthDates];
 		const previousSelectedDays = [...selectedDays];
+		const nextRoutineOrder = routines.reduce((maxOrder, routine) => Math.max(maxOrder, routine.order), -1) + 1;
 		const routineInputs = [
 			{ title, category, duration },
 			...additionalRoutineDrafts.map((draft) => ({
@@ -557,7 +567,7 @@
 				duration: draft.duration
 			}))
 		];
-		const newRoutines = routineInputs.map((input) => {
+		const newRoutines = routineInputs.map((input, index) => {
 			const routineRef = doc(collection(db!, 'Routines'));
 			return {
 				ref: routineRef,
@@ -565,6 +575,7 @@
 					id: routineRef.id,
 					title: input.title.trim(),
 					category: input.category,
+					order: nextRoutineOrder + index,
 					...(input.duration !== '' ? { duration: input.duration } : {}),
 					recurrence: recurrenceMode,
 					monthDates: recurrenceMode === 'monthDates' ? [...selectedMonthDates] : [],
@@ -587,6 +598,7 @@
 				batch.set(ref, {
 					title: routine.title,
 					category: routine.category,
+					order: routine.order,
 					...(routine.duration !== undefined ? { duration: routine.duration } : {}),
 					recurrence: routine.recurrence,
 					monthDates: routine.monthDates,
@@ -612,6 +624,72 @@
 			errorMessage = `Unable to save ${newRoutines.length === 1 ? 'this routine' : 'these routines'}. Your changes were reverted.`;
 		} finally {
 			saving = false;
+		}
+	}
+
+	function startDraggingRoutine(routine: Routine, event: DragEvent) {
+		if (reorderingRoutineIds.length > 0 || pendingRoutineIds.includes(routine.id)) return;
+		draggedRoutineId = routine.id;
+		event.dataTransfer?.setData('text/plain', routine.id);
+		if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+	}
+
+	function handleRoutineDragOver(routine: Routine, event: DragEvent) {
+		if (!draggedRoutineId || draggedRoutineId === routine.id || reorderingRoutineIds.length > 0) return;
+		const draggedRoutine = routines.find((item) => item.id === draggedRoutineId);
+		if (!draggedRoutine || draggedRoutine.category !== routine.category) return;
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+		dragOverRoutineId = routine.id;
+	}
+
+	function endDraggingRoutine() {
+		draggedRoutineId = null;
+		dragOverRoutineId = null;
+	}
+
+	async function dropRoutine(routine: Routine, event: DragEvent) {
+		event.preventDefault();
+		const sourceId = draggedRoutineId;
+		endDraggingRoutine();
+		if (!db || !sourceId || sourceId === routine.id || reorderingRoutineIds.length > 0) return;
+
+		const sourceRoutine = routines.find((item) => item.id === sourceId);
+		if (!sourceRoutine || sourceRoutine.category !== routine.category) return;
+
+		const categoryRoutines = routines
+			.filter((item) => item.category === routine.category)
+			.sort((a, b) => a.order - b.order);
+		const sourceIndex = categoryRoutines.findIndex((item) => item.id === sourceId);
+		const targetIndex = categoryRoutines.findIndex((item) => item.id === routine.id);
+		if (sourceIndex === -1 || targetIndex === -1) return;
+
+		const reorderedCategoryRoutines = [...categoryRoutines];
+		const [movedRoutine] = reorderedCategoryRoutines.splice(sourceIndex, 1);
+		reorderedCategoryRoutines.splice(targetIndex, 0, movedRoutine);
+		const previousOrders = new Map(categoryRoutines.map((item) => [item.id, item.order]));
+		const reorderedIds = reorderedCategoryRoutines.map((item) => item.id);
+		reorderingRoutineIds = reorderedIds;
+		errorMessage = '';
+		routines = routines.map((item) => {
+			const newOrder = reorderedIds.indexOf(item.id);
+			return newOrder === -1 ? item : { ...item, order: newOrder };
+		});
+
+		try {
+			const batch = writeBatch(db);
+			for (const item of reorderedCategoryRoutines) {
+				batch.update(doc(db, 'Routines', item.id), { order: reorderedIds.indexOf(item.id) });
+			}
+			await batch.commit();
+		} catch (error) {
+			console.error(error);
+			routines = routines.map((item) =>
+				previousOrders.has(item.id) ? { ...item, order: previousOrders.get(item.id)! } : item
+			);
+			errorMessage = 'Unable to reorder these routines. Your change was reverted.';
+		} finally {
+			reorderingRoutineIds = [];
 		}
 	}
 
@@ -938,7 +1016,16 @@
 							{#if !collapsedDetailCategories.includes(routineCategory.name)}
 								<div class="flex flex-col gap-2 border-t border-stone-200 bg-[#fffdf8] p-3">
 									{#each categoryRoutines as routine (routine.id)}
-										<div class={`group rounded-xl border p-3 transition ${isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'}`}>
+										<div
+											draggable={reorderingRoutineIds.length === 0}
+											ondragstart={(event) => startDraggingRoutine(routine, event)}
+											ondragover={(event) => handleRoutineDragOver(routine, event)}
+											ondrop={(event) => dropRoutine(routine, event)}
+											ondragend={endDraggingRoutine}
+											class={`group rounded-xl border p-3 transition ${dragOverRoutineId === routine.id ? 'border-emerald-500 bg-emerald-50 shadow-sm' : isComplete(routine, selectedDay!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'} ${draggedRoutineId === routine.id ? 'cursor-grabbing opacity-85 scale-[1.01] shadow-lg ring-2 ring-emerald-400/60' : 'cursor-grab'}`}
+											aria-label={`Drag to reorder ${routine.title}`}
+											role="listitem"
+										>
 											<div class="flex items-start gap-3">
 												<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isComplete(routine, selectedDay!)} onclick={() => toggleComplete(routine, selectedDay!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isComplete(routine, selectedDay!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
 													<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
@@ -1043,7 +1130,16 @@
 									{#if !collapsedDrawerCategories.includes(routineCategory.name)}
 										<div class="flex flex-col gap-2 border-t border-stone-200 bg-[#fffdf8] p-3">
 											{#each categoryRoutines as routine (routine.id)}
-												<div class={`group rounded-xl border p-3 transition ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'}`}>
+												<div
+													draggable={reorderingRoutineIds.length === 0}
+													ondragstart={(event) => startDraggingRoutine(routine, event)}
+													ondragover={(event) => handleRoutineDragOver(routine, event)}
+													ondrop={(event) => dropRoutine(routine, event)}
+													ondragend={endDraggingRoutine}
+													class={`group rounded-xl border p-3 transition ${dragOverRoutineId === routine.id ? 'border-emerald-500 bg-emerald-50 shadow-sm' : isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-200 bg-emerald-50' : 'border-stone-200 bg-stone-50/70 hover:border-emerald-200 hover:bg-emerald-50/40'} ${draggedRoutineId === routine.id ? 'cursor-grabbing opacity-85 scale-[1.01] shadow-lg ring-2 ring-emerald-400/60' : 'cursor-grab'}`}
+													aria-label={`Drag to reorder ${routine.title}`}
+													role="listitem"
+												>
 													<div class="flex items-start gap-3">
 														<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Mark ${routine.title} complete`} aria-pressed={isCompleteOnDate(routine, selectedCalendarDate!)} onclick={() => toggleCompleteOnDate(routine, selectedCalendarDate!)} class={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60 ${isCompleteOnDate(routine, selectedCalendarDate!) ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 bg-white text-transparent hover:border-blue-500'}`}>
 															<svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
