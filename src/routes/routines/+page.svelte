@@ -1151,7 +1151,10 @@
 							>
 								<span class="min-w-0 truncate font-bold text-stone-800">{routineCategory.name}</span>
 								<span class="flex items-center gap-2">
-									<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">{categoryRoutines.length}</span>
+									<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
+										{categoryRoutines.filter((routine) => !isComplete(routine, selectedDay!)).length}
+									</span>
+
 									<svg aria-hidden="true" class={`h-4 w-4 text-slate-400 transition-transform ${collapsedDetailCategories.includes(routineCategory.name) ? '-rotate-90' : 'rotate-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
 								</span>
 							</button>
