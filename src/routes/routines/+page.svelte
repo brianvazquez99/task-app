@@ -279,8 +279,9 @@
 			})
 			.filter((item) => item.name)
 			.sort((a, b) => a.order - b.order);
-
-		collapsedDetailCategories = categories.map(cat => cat.name)
+		const catNames = categories.map(cat => cat.name)
+		collapsedDetailCategories = catNames
+		collapsedDrawerCategories = catNames
 	}
 
 	function categoryNameExists(name: string, excludedId?: string) {
@@ -1241,20 +1242,24 @@
 					<div class="mt-2 grid grid-cols-7 gap-2">
 						{#each monthCells() as cell, index (index)}
 							{#if cell}
+								{@const dateRoutines = routinesForDate(cell)}
+								{@const totalTime = dateRoutines.reduce((total, routine) => total + (routine.duration ?? 0), 0)}
 								<button
 									type="button"
 									onclick={() => (selectedCalendarDate = selectedCalendarDate && dateKey(selectedCalendarDate) === dateKey(cell) ? null : cell)}
 									aria-pressed={selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell)}
+									aria-label={`${fullDateLabel(cell)}: ${dateRoutines.length} ${dateRoutines.length === 1 ? 'item' : 'items'}, ${totalTime} minutes total`}
 									class={`min-h-28 rounded-xl border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'border-emerald-500 bg-emerald-50 shadow-sm' : 'border-stone-200 bg-stone-50/60 hover:border-emerald-300 hover:bg-emerald-50/40'}`}
 								>
 									<p class={`mb-2 text-right text-xs font-bold ${selectedCalendarDate !== null && dateKey(selectedCalendarDate) === dateKey(cell) ? 'text-emerald-700' : 'text-stone-500'}`}>{cell.getDate()}</p>
-									<div class="max-h-24 space-y-1 overflow-y-auto">
-										{#each routinesForDate(cell) as routine (routine.id)}
-											<p class={`truncate rounded px-1.5 py-1 text-left text-xs font-medium ${isCompleteOnDate(routine, cell) ? 'bg-emerald-100 text-emerald-700 line-through' : 'bg-white text-slate-600'}`} title={routine.title}>{routine.title}{routine.duration ? ` · ${routine.duration}m` : ''}</p>
-										{:else}
-											<p class="text-left text-xs text-slate-300">—</p>
-										{/each}
-									</div>
+									{#if dateRoutines.length}
+										<div class="space-y-1 text-left">
+											<p class="text-xs font-semibold text-slate-700">{dateRoutines.length} {dateRoutines.length === 1 ? 'item' : 'items'}</p>
+											<p class="text-xs font-medium text-emerald-700">{totalTime} min total</p>
+										</div>
+									{:else}
+										<p class="text-left text-xs text-slate-300">—</p>
+									{/if}
 								</button>
 							{:else}
 								<div class="min-h-28 rounded-xl border border-transparent bg-transparent"></div>
