@@ -192,6 +192,13 @@
 		return routinesForDay(dayName).filter((routine) => routine.category === categoryName);
 	}
 
+	function totalTimeForCategory(dayName:string, categoryName:string): number {
+	  const routines = routinesForDay(dayName).filter((routine) => routine.category === categoryName)
+			return routines.reduce((acc, cur) => {
+			return acc + (cur.duration ?? 0)
+			}, 0)
+	}
+
 	function toggleDetailCategory(categoryName: string) {
 		collapsedDetailCategories = collapsedDetailCategories.includes(categoryName)
 			? collapsedDetailCategories.filter((name) => name !== categoryName)
@@ -272,6 +279,8 @@
 			})
 			.filter((item) => item.name)
 			.sort((a, b) => a.order - b.order);
+
+		collapsedDetailCategories = categories.map(cat => cat.name)
 	}
 
 	function categoryNameExists(name: string, excludedId?: string) {
@@ -1142,6 +1151,7 @@
 				<div class="flex flex-col gap-3">
 					{#each categories as routineCategory (routineCategory.id)}
 						{@const categoryRoutines = routinesForCategory(selectedDay!, routineCategory.name)}
+						{@const categoryTotalTime = totalTimeForCategory(selectedDay!, routineCategory.name)}
 						<section class="overflow-hidden rounded-xl border border-stone-200 bg-amber-50/40">
 							<button
 								type="button"
@@ -1149,7 +1159,15 @@
 								aria-expanded={!collapsedDetailCategories.includes(routineCategory.name)}
 								class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-amber-100/60"
 							>
-								<span class="min-w-0 truncate font-bold text-stone-800">{routineCategory.name}</span>
+								<span class="min-w-0 flex-1 truncate font-bold text-stone-800">{routineCategory.name}</span>
+								<span
+									class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200 bg-white/80 px-2.5 py-1 text-xs font-semibold text-amber-900 shadow-sm"
+									aria-label={`Total scheduled time: ${categoryTotalTime} minutes`}
+								>
+									<svg aria-hidden="true" class="h-3.5 w-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" /></svg>
+									<span class="hidden text-amber-700 sm:inline">Total</span>
+									<span>{categoryTotalTime} min</span>
+								</span>
 								<span class="flex items-center gap-2">
 									<span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500">
 										{categoryRoutines.filter((routine) => !isComplete(routine, selectedDay!)).length}
@@ -1177,7 +1195,7 @@
 												</button>
 												<div class="min-w-0 flex-1">
 													<p class={`text-sm font-semibold ${isComplete(routine, selectedDay!) ? 'text-emerald-800 line-through' : 'text-slate-800'}`}>{routine.title}</p>
-													<p class="mt-1 text-xs font-medium text-slate-400">{routine.category}{routine.duration ? ` · ${routine.duration} min` : ''}</p>
+													<p class="mt-1 text-xs font-medium text-slate-400">{routine.duration ? `${routine.duration} min` : ''}</p>
 												</div>
 												<div class="flex items-center gap-1 opacity-100 transition">
 													<button type="button" disabled={pendingRoutineIds.includes(routine.id)} aria-label={`Edit ${routine.title}`} onclick={() => startEditingRoutine(routine)} class="rounded-md px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-wait">Edit</button>
